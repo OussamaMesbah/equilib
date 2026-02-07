@@ -14,7 +14,7 @@ def publish(token=None, username="omesbah"):
     # 2. Create Model Repository (for code and dataset)
     model_id = f"{username}/topo-align"
     try:
-        create_repo(repo_id=model_id, repo_type="model", exist_ok=True)
+        api.create_repo(repo_id=model_id, repo_type="model", exist_ok=True)
         print(f"Repository {model_id} created/verified.")
     except Exception as e:
         print(f"Error creating model repo: {e}")
@@ -22,7 +22,7 @@ def publish(token=None, username="omesbah"):
     # 3. Create Space (for interactive demo)
     space_id = f"{username}/topo-align-demo"
     try:
-        create_repo(repo_id=space_id, repo_type="space", space_sdk="streamlit", exist_ok=True)
+        api.create_repo(repo_id=space_id, repo_type="space", space_sdk="streamlit", exist_ok=True)
         print(f"Space {space_id} created/verified.")
     except Exception as e:
         print(f"Error creating space: {e}")
