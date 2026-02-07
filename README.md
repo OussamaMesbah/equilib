@@ -1,17 +1,27 @@
 ---
+title: Topo-Align (Equilib)
+emoji: 🧬
+colorFrom: blue
+colorTo: indigo
+sdk: null
+pinned: true
 license: mit
-library_name: topo-align
 tags:
-- alignment
-- rlhf
-- multi-objective
-- topology
-- machine-learning
-- gradient-free
-- fixed-point
-- sperner
+  - reinforcement-learning
+  - rlhf
+  - alignment
+  - topology
+  - mathematics
+  - sperner-lemma
+  - human-in-the-loop
+  - library
+  - custom-implementation
 ---
+
 # Topo-Align (Equilib)
+
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-blue)](https://huggingface.co/spaces/omesbah/topo-align-demo)
+[![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/omesbah/sperner-bench)
 
 **Gradient-Free Multi-Objective Alignment for Large Language Models using Topological Fixed-Point Theory**
 
