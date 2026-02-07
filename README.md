@@ -1,4 +1,26 @@
+---
+title: Topo-Align (Equilib)
+emoji: 🧬
+colorFrom: blue
+colorTo: indigo
+sdk: null
+pinned: true
+license: mit
+tags:
+  - reinforcement-learning
+  - rlhf
+  - alignment
+  - topology
+  - mathematics
+  - sperner-lemma
+  - human-in-the-loop
+  - library
+  - custom-implementation
+---
+
 # Topo-Align (Equilib)
+
+[![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/omesbah/sperner-bench)
 
 **Gradient-Free Multi-Objective Alignment for Large Language Models using Topological Fixed-Point Theory**
 
@@ -18,9 +40,9 @@ In contrast, Topo-Align provides:
 
 ## Comparative Analysis
 
-| Feature                      | Linear Scalarization             | Grid/Bayesian Search        | Topo-Align (Equilib)                         |
-| :--------------------------- | :------------------------------- | :-------------------------- | :------------------------------------------- |
-| **Primary Logic**      | Weighted Sum Optimization        | Stochastic Sampling         | Sperner Fixed-Point Walk                     |
+| Feature                | Linear Scalarization             | Grid/Bayesian Search        | Topo-Align (Equilib)                   |
+| :--------------------- | :------------------------------- | :-------------------------- | :------------------------------------- |
+| **Primary Logic**      | Weighted Sum Optimization        | Stochastic Sampling         | Sperner Fixed-Point Walk               |
 | **Scaling Complexity** | O(1) (Static)                    | O(k^N) (Exponential)        | **O(N) Memory (Linear Scalability)**   |
 | **Reliability**        | Susceptible to gradient collapse | High risk of missing optima | **Guaranteed convergence**             |
 | **Diagnostics**        | No inherent conflict metrics     | Visual inspection only      | **Topological Frustration Score**      |
@@ -104,8 +126,8 @@ optimal_weights = solver.solve_with_surrogate(max_iterations=15)
 
 ## Core Components
 
-| Component                      | Module                      | Description                                                         |
-| :----------------------------- | :-------------------------- | :------------------------------------------------------------------ |
+| Component                | Module                    | Description                                                         |
+| :----------------------- | :------------------------ | :------------------------------------------------------------------ |
 | **N-Dimensional Solver** | `ndim_topo_align.py`      | The primary engine implementing implicit Freudenthal triangulation. |
 | **Sperner Trainer**      | `sperner_trainer.py`      | Integration layer for Hugging Face Transformers and PEFT.           |
 | **Analytics Suite**      | `analytics.py`            | Diagnostic tools including the Topological Frustration Score.       |
@@ -121,3 +143,17 @@ optimal_weights = solver.solve_with_surrogate(max_iterations=15)
 ## License
 
 This project is licensed under the MIT License.
+
+## 📖 Citation
+
+If you find this project useful for your research, please consider citing:
+
+```bibtex
+@misc{mesbah2024topoalign,
+    title={Fixpunktsätze und ihre Anwendungen (Fixed Point Theorems and their Applications)},
+    author={Mesbah, Oussama}, 
+    howpublished={\url{https://huggingface.co/omesbah/topo-align}},
+    year={2024},
+    note={Bachelor's Thesis, Ludwig-Maximilians-Universität München}
+}
+```

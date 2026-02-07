@@ -1,6 +1,10 @@
-import numpy as np
-import sys
 import os
+import sys
+
+# Ensure repository root is in path for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import numpy as np
 
 # Create a mock RLHF environment
 # Three objectives: [Helpfulness, Safety, Verbosity]
