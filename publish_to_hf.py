@@ -23,8 +23,8 @@ def publish(token=None, username="omesbah"):
     # 3. Create Space (for interactive demo)
     space_id = f"{username}/topo-align-demo"
     try:
-        # Try without space_sdk first to see if it's the culprit
-        api.create_repo(repo_id=space_id, repo_type="space", exist_ok=True)
+        # Some versions use 'sdk', others 'space_sdk'.
+        api.create_repo(repo_id=space_id, repo_type="space", sdk="streamlit", exist_ok=True)
         print(f"Space {space_id} created/verified.")
     except Exception as e:
         print(f"Error creating space: {e}")
