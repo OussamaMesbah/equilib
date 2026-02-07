@@ -20,7 +20,6 @@ tags:
 
 # Topo-Align (Equilib)
 
-[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-blue)](https://huggingface.co/spaces/omesbah/topo-align-demo)
 [![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/omesbah/sperner-bench)
 
 **Gradient-Free Multi-Objective Alignment for Large Language Models using Topological Fixed-Point Theory**
