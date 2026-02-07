@@ -22,12 +22,14 @@ def publish(token=None, username="omesbah"):
     
     # 3. Create Space (for interactive demo)
     space_id = f"{username}/topo-align-demo"
+    space_created = False
     try:
         # Some versions use 'sdk', others 'space_sdk'.
         api.create_repo(repo_id=space_id, repo_type="space", sdk="streamlit", exist_ok=True)
         print(f"Space {space_id} created/verified.")
+        space_created = True
     except Exception as e:
-        print(f"Error creating space: {e}")
+        print(f"Error creating space (skipping for now): {e}")
         
     # 4. Upload files to Model Repo
     print("Uploading files to model repository...")
@@ -39,13 +41,16 @@ def publish(token=None, username="omesbah"):
     )
     
     # 5. Upload files to Space (Demo)
-    print("Uploading files to Space...")
-    api.upload_folder(
-        folder_path=".",
-        repo_id=space_id,
-        repo_type="space",
-        ignore_patterns=[".venv/*", "__pycache__/*", ".git/*", "dist/*", "sperner_dataset.json"] # Space might not need huge dataset if mock mode is default
-    )
+    if space_created:
+        print("Uploading files to Space...")
+        api.upload_folder(
+            folder_path=".",
+            repo_id=space_id,
+            repo_type="space",
+            ignore_patterns=[".venv/*", "__pycache__/*", ".git/*", "dist/*", "sperner_dataset.json"] 
+        )
+    else:
+        print("Skipping Space upload as repo was not created.")
     
     print("\n--- Publication Complete ---")
     print(f"Model Repo: https://huggingface.co/models/{model_id}")
