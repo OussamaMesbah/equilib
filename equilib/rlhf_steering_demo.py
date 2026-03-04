@@ -1,6 +1,10 @@
+import logging
 import numpy as np
+import torch
 import sys
 import os
+
+logger = logging.getLogger(__name__)
 
 # Create a mock RLHF environment
 # Three objectives: [Helpfulness, Safety, Verbosity]
@@ -53,7 +57,7 @@ class RLHFSteeringSolver(TopoAlignSolver):
         self.targets = np.array(targets) if targets else np.array([0.7, 0.8, 0.4])
         self.simulator = RLHFSteeringOracle()
         
-        print(f"[RLHF] Steering Objectives: Helpfulness={self.targets[0]}, Safety={self.targets[1]}, Verbosity={self.targets[2]}")
+        logger.info(f"RLHF Steering Objectives: Helpfulness={self.targets[0]}, Safety={self.targets[1]}, Verbosity={self.targets[2]}")
 
     def oracle_label(self, x, y):
         # 1. Get Weights from coordinates
@@ -151,7 +155,7 @@ class RLHFSteeringSolver(TopoAlignSolver):
 from equilib.ndim_topo_align import NDimTopoAlignSolver
 
 if __name__ == "__main__":
-    print("--- RLHF Steering Demo (3 Objectives) ---")
+    logger.info("--- RLHF Steering Demo (3 Objectives) ---")
     
     # 1. Setup Oracle (Simulated Reward Model / Metric Evaluator)
     oracle = RLHFSteeringOracle()
@@ -162,34 +166,39 @@ if __name__ == "__main__":
     solver = NDimTopoAlignSolver(n_objs=3, subdivision=30)
     
     # 3. Override the Solver's label function to use our RLHF Oracle
-    # The solver passes 'y' coords (cumulative/hypercube). 
-    # We convert to weights 'w' then evaluate.
-    def rlhf_label(y_vec):
-        w = solver.get_barycentric_weights(y_vec)
-        metrics = oracle.evaluate_model(w[0], w[1], w[2])
-        # We want to increase the objective that is furthest below its target
-        gaps = targets - metrics
-        return np.argmax(gaps)
+    def rlhf_label(weights_batch: torch.Tensor) -> torch.Tensor:
+        batch_size = weights_batch.shape[0]
+        labels = torch.zeros(batch_size, dtype=torch.long)
+        for i in range(batch_size):
+            w = weights_batch[i].numpy()
+            metrics = oracle.evaluate_model(w[0], w[1], w[2])
+            gaps = targets - metrics
+            # Sperner Boundary Condition
+            if w[0] <= 1e-9: gaps[0] = -999
+            if w[1] <= 1e-9: gaps[1] = -999
+            if w[2] <= 1e-9: gaps[2] = -999
+            labels[i] = int(np.argmax(gaps))
+        return labels
         
-    solver.oracle_label = rlhf_label
-    
     # 4. Run the Topological Walk
-    best_w = solver.solve()
+    best_w_tensor = solver.solve(oracle_fn=rlhf_label, batch_size=1)
+    best_w = best_w_tensor[0].numpy()
+
     
     if best_w is not None:
-        print("\n" + "="*40)
-        print(" [RLHF] OPTIMIZATION RESULT")
-        print("="*40)
-        print(f"Optimal Mixing Weights:")
-        print(f"  Helpfulness (w_H): {best_w[0]:.3f}")
-        print(f"  Safety      (w_S): {best_w[1]:.3f}")
-        print(f"  Verbosity   (w_V): {best_w[2]:.3f}")
+        logger.info("\n" + "="*40)
+        logger.info(" [RLHF] OPTIMIZATION RESULT")
+        logger.info("="*40)
+        logger.info(f"Optimal Mixing Weights:")
+        logger.info(f"  Helpfulness (w_H): {best_w[0]:.3f}")
+        logger.info(f"  Safety      (w_S): {best_w[1]:.3f}")
+        logger.info(f"  Verbosity   (w_V): {best_w[2]:.3f}")
         
         # Validation
         final_out = oracle.evaluate_model(*best_w)
-        print("-" * 40)
-        print("Predicted Model Performance:")
-        print(f"  Helpfulness Score: {final_out[0]:.3f} (Target 0.7)")
-        print(f"  Safety Score:      {final_out[1]:.3f} (Target 0.8)")
-        print(f"  Verbosity Score:   {final_out[2]:.3f} (Target 0.4)")
-        print("="*40)
+        logger.info("-" * 40)
+        logger.info("Predicted Model Performance:")
+        logger.info(f"  Helpfulness Score: {final_out[0]:.3f} (Target 0.7)")
+        logger.info(f"  Safety Score:      {final_out[1]:.3f} (Target 0.8)")
+        logger.info(f"  Verbosity Score:   {final_out[2]:.3f} (Target 0.4)")
+        logger.info("="*40)

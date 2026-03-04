@@ -1,4 +1,7 @@
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 class TopoAlignSolver:
     def __init__(self, subdivision=10):
@@ -67,13 +70,13 @@ class TopoAlignSolver:
         Proper Sperner labeling guarantees distinct Labels on distinct boundaries.
         We scan the Bottom Edge (y=0 -> w2=0), where possible labels are {0, 2} (since 1 is suppressed).
         """
-        print("[START] Scanning Boundary y=0 for {0, 2} door...", flush=True)
+        logger.info("Scanning Boundary y=0 for {0, 2} door...")
         for x in range(self.n):
             l1 = self.oracle_label(x, 0)
             l2 = self.oracle_label(x+1, 0)
             
             if {l1, l2} == {0, 2}:
-                print(f"[DOOR] Found Entry Door at x={x}: Labels {l1}-{l2}", flush=True)
+                logger.info(f"Found Entry Door at x={x}: Labels {l1}-{l2}")
                 return [(x, 0), (x+1, 0)]
         return None
 
@@ -82,12 +85,12 @@ class TopoAlignSolver:
         Performs the Sperner Walk (Thesis Section 1.2).
         Moves from triangle to triangle until a panchromatic one is found.
         """
-        print(f"\n[WALK] Starting Topo-Align Walk (Grid Size {self.n})...", flush=True)
+        logger.info(f"Starting Topo-Align Walk (Grid Size {self.n})...")
         
         # 1. Find entrance on boundary
         current_edge = self.find_start_edge()
         if not current_edge:
-            print("[FAIL] No valid boundary door found (Check boundary conditions).", flush=True)
+            logger.error("No valid boundary door found (Check boundary conditions).")
             return None, None
 
         # Track the path for visualization
@@ -122,11 +125,11 @@ class TopoAlignSolver:
             centroid_x = sum(p[0] for p in current_tri)/3
             centroid_y = sum(p[1] for p in current_tri)/3
             w_cent = self.weights_from_coords(centroid_x, centroid_y)
-            print(f"[STEP {step}] Centroid {np.round(w_cent, 2)} | Labels {list(labels)}", flush=True)
+            logger.debug(f"STEP {step}: Centroid {np.round(w_cent, 2)} | Labels {list(labels)}")
 
             # CHECK TERMINATION
             if labels == {0, 1, 2}:
-                print(f"\n[SUCCESS] FIXED POINT FOUND!", flush=True)
+                logger.info("SUCCESS: FIXED POINT FOUND!")
                 return current_tri, path_triangles
 
             # FIND THE EXIT DOOR
@@ -163,7 +166,7 @@ class TopoAlignSolver:
                     break
             
             if next_edge_set is None:
-                print("[DEAD END] Returned to entrance or boundary hit.", flush=True)
+                logger.warning("DEAD END: Returned to entrance or boundary hit.")
                 break
                 
             # FIND NEIGHBOR across next_edge_set
@@ -212,17 +215,17 @@ class TopoAlignSolver:
             if found_next_tri:
                  # Check bounds for loop safety
                  if step > max_steps:
-                     print("[FAIL] Max steps reached.", flush=True)
+                     logger.error("FAIL: Max steps reached.")
                      break
             else:
-                print(f"[DEAD END] Hit boundary at {current_tri} via edge {list(next_edge_set)}. Edge len:{d_uv}", flush=True)
+                logger.warning(f"DEAD END: Hit boundary at {current_tri} via edge {list(next_edge_set)}. Edge len:{d_uv}")
                 break
                 
         if not found_next_tri:
-             print("[FAIL] Walk failed.", flush=True)
+             logger.error("FAIL: Walk failed.")
              return None, path_triangles
 
-        print("[DONE] Walk complete.", flush=True)
+        logger.info("DONE: Walk complete.")
         return current_tri, path_triangles
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 from .topo_align import TopoAlignSolver
+
+logger = logging.getLogger(__name__)
 
 class AdaptiveTopoAlignSolver(TopoAlignSolver):
     """
@@ -33,18 +36,18 @@ class AdaptiveTopoAlignSolver(TopoAlignSolver):
         """
         Runs the iterative 'Zoom' process.
         """
-        print(f"\n[ADAPTIVE] Starting Adaptive Topo-Align (Depth {self.max_depth}, Grid {self.n})...", flush=True)
+        logger.info(f"Starting Adaptive Topo-Align (Depth {self.max_depth}, Grid {self.n})...")
         
         final_tri = None
         global_tri_weights = []
 
         for depth in range(1, self.max_depth + 1):
-            print(f"\n[DEPTH {depth}] Zooming into sub-simplex...", flush=True)
+            logger.info(f"DEPTH {depth}: Zooming into sub-simplex...")
             # Run the standard walk on the current basis
             result_tri_coords, path = self.walk()
             
             if not result_tri_coords:
-                print("[FAIL] Walk failed at this depth.", flush=True)
+                logger.error("FAIL: Walk failed at this depth.")
                 break
             
             # Extract the vertices of the result triangle in GLOBAL weights
@@ -66,17 +69,17 @@ class AdaptiveTopoAlignSolver(TopoAlignSolver):
             
             # Calculate centroid
             centroid = sum(global_tri_weights) / 3
-            print(f"[RESULT] Depth {depth}: Centroid {np.round(centroid, 5)} | Precision (Diam): {max_diam:.6f}", flush=True)
+            logger.info(f"RESULT Depth {depth}: Centroid {np.round(centroid, 5)} | Precision (Diam): {max_diam:.6f}")
             
             if max_diam < self.precision:
-                print(f"[DONE] Precision target {self.precision} reached.", flush=True)
+                logger.info(f"DONE: Precision target {self.precision} reached.")
                 break
 
             # PREPARE NEXT DEPTH: "Zoom" into this triangle
             
             # Check if we have a panchromatic triangle (labels {0, 1, 2})
             if set(vertex_labels) != {0, 1, 2}:
-                print(f"[WARN] Triangle at depth {depth} is not panchromatic: {vertex_labels}. Zooming might fail.", flush=True)
+                logger.warning(f"WARN: Triangle at depth {depth} is not panchromatic: {vertex_labels}. Zooming might fail.")
                 break
 
             new_basis = np.zeros((3, 3))
@@ -90,7 +93,7 @@ class AdaptiveTopoAlignSolver(TopoAlignSolver):
             final_tri = global_tri_weights
 
         if final_tri:
-            print(f"\n[COMPLETE] Final High-Precision Equilibrium: {np.round(sum(final_tri)/3, 7)}", flush=True)
+            logger.info(f"COMPLETE: Final High-Precision Equilibrium: {np.round(sum(final_tri)/3, 7)}")
         return final_tri
 
 if __name__ == "__main__":

@@ -4,7 +4,10 @@ For 3 objectives, plots the 2D simplex (triangle) with label regions and the wal
 """
 from __future__ import annotations
 
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     import matplotlib.pyplot as plt
@@ -132,7 +135,7 @@ def plot_sperner_path_from_solver(solver) -> "plt.Axes":
         raise ImportError("matplotlib is required for plotting. Install with: pip install matplotlib")
     path = getattr(solver, "_path_history", None)
     if path is None or len(path) == 0:
-        print("[WARN] No path history found. Did the solver run?")
+        logger.warning("No path history found. Did the solver run?")
         return None
     path = np.asarray(path)
     if path.shape[1] != 3:
