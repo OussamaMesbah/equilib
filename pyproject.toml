@@ -51,9 +51,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.urls]
-Homepage = "https://github.com/omesbah/equilib"
-Repository = "https://github.com/omesbah/equilib"
-Documentation = "https://github.com/omesbah/equilib/tree/main/docs"
+Homepage = "https://github.com/OussamaMesbah/equilib"
+Repository = "https://github.com/OussamaMesbah/equilib"
+Documentation = "https://github.com/OussamaMesbah/equilib/tree/main/docs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["equilib"]

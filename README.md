@@ -2,7 +2,7 @@
 
 **Find the optimal balance between competing objectives — without gradients, without grid search, with a mathematical guarantee.**
 
-[![Tests](https://github.com/omesbah/equilib/actions/workflows/test.yml/badge.svg)](https://github.com/omesbah/equilib/actions/workflows/test.yml)
+[![Tests](https://github.com/OussamaMesbah/equilib/actions/workflows/test.yml/badge.svg)](https://github.com/OussamaMesbah/equilib/actions/workflows/test.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -166,7 +166,7 @@ equilib/
   author = {Mesbah, Oussama},
   title = {Equilib: Gradient-Free Multi-Objective Alignment via Sperner's Lemma},
   year = {2026},
-  url = {https://github.com/omesbah/equilib}
+  url = {https://github.com/OussamaMesbah/equilib}
 }
 ```
 
