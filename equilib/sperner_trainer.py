@@ -1,14 +1,19 @@
 import logging
+from typing import Callable, Dict, Generator, List, Optional
+
 import numpy as np
 import torch
-from typing import List, Callable, Optional, Union, Dict, Generator
+
 from .ndim_solver import NDimEquilibSolver
 
 logger = logging.getLogger(__name__)
 
 
 class BaseObjective:
-    """Standard interface for user objectives."""
+    """Standard interface for user objectives.
+
+    Subclass and implement ``__call__`` to return a scalar loss or reward.
+    """
 
     def __call__(self, outputs) -> float:
         raise NotImplementedError(
@@ -17,12 +22,17 @@ class BaseObjective:
 
 
 class SpernerTrainer:
-    """
-    Optimized Hugging Face Adapter for Topological Alignment.
-    
-    CRITICAL FIX: This version avoids the Peft 'add_weighted_adapter' bottleneck
-    by simulating the weighted output if in mock mode, or providing a framework 
-    for dynamic inference-time blending.
+    """Hugging Face / PEFT adapter for topological alignment.
+
+    Wraps an :class:`NDimEquilibSolver` to optimise LoRA adapter mixing
+    weights by evaluating a set of conflicting objectives.
+
+    Args:
+        base_model: A Hugging Face model object or identifier string.
+        adapters: List of adapter names to blend.
+        objectives: List of callables returning scalar losses.
+        mock: If *True* (default), uses a synthetic loss landscape instead
+            of running real model inference.
     """
 
     def __init__(self,
@@ -40,37 +50,25 @@ class SpernerTrainer:
         self._eval_cache: Dict[tuple, List[float]] = {}
 
     def evaluate_mixed_model(self, weights: np.ndarray) -> List[float]:
-        """
-        Calculates objectives for a given weight mix.
+        """Evaluate all objectives for a given adapter weight mix.
+
+        In mock mode, returns losses from a synthetic non-convex landscape.
+        In real mode, runs inference through the model and collects objective scores.
         """
         w_tuple = tuple(np.round(weights, 4))
         if w_tuple in self._eval_cache:
             return self._eval_cache[w_tuple]
 
         if self.mock:
-            # High-performance synthetic landscape for testing
-            # Simulates realistic non-convex conflicts
             losses = []
             for i in range(self.n_objs):
-                # Each objective i is happiest when its weight is high,
-                # but has diminishing returns and conflicts with others.
                 loss = (1.0 - weights[i])**2 + 0.1 * np.sum(
                     np.delete(weights, i)**2)
                 losses.append(loss)
             self._eval_cache[w_tuple] = losses
             return losses
 
-        # REAL SYSTEM INTEGRATION:
-        # Optimization: Users should use a 'WeightedAdapterWrapper' that
-        # does not re-merge weights but uses dynamic linear combinations in the forward pass.
-        # This implementation assumes the user has attached such a hook.
-
-        # [Placeholder for Dynamic Forward Pass Logic]
-        # In a production system, you would set the weights in your model wrapper here.
-        # self.model.set_dynamic_weights(weights)
-
         losses = []
-        # Run inference once, calculate all objectives
         for obj_func in self.objectives:
             losses.append(obj_func(self.model))
 

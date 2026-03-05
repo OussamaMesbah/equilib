@@ -1,32 +1,51 @@
 import logging
 import torch
-from typing import Callable, Tuple, List
+from typing import Callable, Generator, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class SpernerConvergenceError(Exception):
     """Raised when the Sperner walk fails to converge."""
-    pass
 
 
 class NDimEquilibSolver:
-    """
-    2026 Production Engine: PyTorch-Native N-Dimensional Topological Solver.
-    Uses dimension-lifting on a Kuhn/Freudenthal triangulation.
+    """PyTorch-native N-dimensional topological solver.
+
+    Finds the fixed point of Sperner-labeled simplicial complexes using
+    dimension-lifting on an implicit Kuhn/Freudenthal triangulation.
+    Scales to 10+ objectives with O(N) oracle calls.
+
+    Args:
+        n_objs: Number of objectives (simplex dimension + 1).
+        subdivision: Grid resolution; higher values give finer search. Must be >= 2.
+        device: Torch device (``"cpu"`` or ``"cuda"``).
     """
 
-    def __init__(self,
-                 n_objs: int,
-                 subdivision: int = 100,
-                 device: str = "cpu"):
+    def __init__(
+        self,
+        n_objs: int,
+        subdivision: int = 100,
+        device: str = "cpu",
+    ) -> None:
+        if n_objs < 2:
+            raise ValueError(f"n_objs must be >= 2, got {n_objs}")
+        if subdivision < 2:
+            raise ValueError(f"subdivision must be >= 2, got {subdivision}")
         self.n_objs = n_objs
         self.d = n_objs - 1
         self.n_sub = subdivision
         self.device = device
 
     def get_barycentric_weights(self, y: torch.Tensor) -> torch.Tensor:
-        """Maps Kuhn coordinates y to Barycentric weights w."""
+        """Map Kuhn lattice coordinates to barycentric simplex weights.
+
+        Args:
+            y: Integer tensor of shape ``(batch, d)`` with Kuhn coordinates.
+
+        Returns:
+            Float tensor of shape ``(batch, n_objs)`` summing to 1 along dim -1.
+        """
         # Ensure y is within the canonical simplex 0 <= y1 <= y2 <= ... <= yd <= n_sub
         y_sorted, _ = torch.sort(y, dim=-1)
         batch_size = y.shape[0]
@@ -97,10 +116,24 @@ class NDimEquilibSolver:
 
         return new_y, new_sigma
 
-    def solve(self,
-              oracle_fn: Callable[[torch.Tensor], torch.Tensor],
-              batch_size: int = 1) -> torch.Tensor:
-        """Synchronous Batch Solve via dimension-lifting Sperner Walk."""
+    def solve(
+        self,
+        oracle_fn: Callable[[torch.Tensor], torch.Tensor],
+        batch_size: int = 1,
+    ) -> torch.Tensor:
+        """Run the dimension-lifting Sperner walk and return equilibrium weights.
+
+        Args:
+            oracle_fn: Callable receiving a ``(batch, n_objs)`` weight tensor and
+                returning a ``(batch,)`` long tensor of dissatisfied-objective indices.
+            batch_size: Number of independent walks to run in parallel.
+
+        Returns:
+            Tensor of shape ``(batch_size, n_objs)`` with the centroid weights of
+            the panchromatic simplex found by each walk.
+        """
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         y_base = torch.zeros((batch_size, self.d),
                              device=self.device,
                              dtype=torch.long)

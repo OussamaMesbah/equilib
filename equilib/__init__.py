@@ -1,9 +1,15 @@
 """
-Equilib: A Topological Fixed-Point Alignment Library.
+Equilib — Gradient-free multi-objective alignment via Sperner's Lemma.
+
+Provides N-dimensional topological solvers, surrogate active-learning solvers,
+PEFT/LoRA integration, MoE routing, and human-in-the-loop alignment tools.
 """
 
 __version__ = "0.1.0"
 
+from typing import Callable, Optional, Union
+
+import numpy as np
 import torch
 
 from .ndim_solver import NDimEquilibSolver, SpernerConvergenceError
@@ -17,21 +23,31 @@ from .industrial import AutoModelMerger
 from .moe_router import TopologicalMoERouter
 
 
-def solve_equilibrium(n_objs: int, subdivision: int = 100, oracle=None):
-    """
-    High-level utility to solve an equilibrium problem.
+def solve_equilibrium(
+    n_objs: int,
+    subdivision: int = 100,
+    oracle: Optional[Callable[[np.ndarray], int]] = None,
+) -> Union[np.ndarray, NDimEquilibSolver]:
+    """High-level utility to solve an equilibrium problem.
 
     Args:
-        n_objs: Number of objectives to balance.
-        subdivision: Resolution of the search grid.
-        oracle: A callable taking a weight vector (numpy array of shape (n_objs,))
+        n_objs: Number of objectives to balance (>= 2).
+        subdivision: Resolution of the search grid (>= 2).
+        oracle: A callable taking a weight vector (numpy array of shape ``(n_objs,)``)
                 and returning the index of the most dissatisfied objective.
+
     Returns:
-        numpy array of optimal weights if oracle is provided,
-        or an NDimEquilibSolver instance if oracle is None.
+        If *oracle* is provided, a numpy array of optimal weights.
+        Otherwise, an :class:`NDimEquilibSolver` instance for manual use.
+
+    Example::
+
+        >>> from equilib import solve_equilibrium
+        >>> weights = solve_equilibrium(3, subdivision=20,
+        ...     oracle=lambda w: int(np.argmax([0.4, 0.4, 0.2] - w)))
     """
     solver = NDimEquilibSolver(n_objs=n_objs, subdivision=subdivision)
-    if oracle:
+    if oracle is not None:
 
         def wrapped_oracle(weights_batch: torch.Tensor) -> torch.Tensor:
             batch_size = weights_batch.shape[0]

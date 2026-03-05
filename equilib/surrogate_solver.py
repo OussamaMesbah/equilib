@@ -4,7 +4,6 @@ from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import torch
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 from .ndim_solver import NDimEquilibSolver
@@ -14,10 +13,20 @@ logger = logging.getLogger(__name__)
 
 
 class NDimSurrogateEquilibSolver(NDimEquilibSolver):
-    """
-    N-Dimensional Surrogate Solver: Active Learning over the N-Dim Simplex.
-    Uses a KNN surrogate to minimize expensive real-oracle calls. Inherits from
-    NDimEquilibSolver so it scales to 10+ objectives with ~50 real calls instead of 500+.
+    """Active-learning surrogate solver for expensive oracles.
+
+    Wraps the N-dimensional Sperner walk with a KNN surrogate model, issuing
+    real oracle queries only when needed.  Typically reduces real evaluations
+    from hundreds to ~20-50.
+
+    Args:
+        n_objs: Number of objectives (>= 2).
+        subdivision: Grid resolution for the underlying walk.
+        n_init_samples: Bootstrap samples drawn from a Dirichlet prior.
+        real_oracle: Callable ``(weights: ndarray) -> int`` returning the
+            index of the most dissatisfied objective.  If *None*, a simple
+            argmin mock oracle is used.
+        real_cost_delay: Optional sleep (seconds) simulating evaluation cost.
     """
 
     def __init__(
@@ -181,9 +190,10 @@ class NDimSurrogateEquilibSolver(NDimEquilibSolver):
 
 
 class SurrogateEquilibSolver(EquilibSolver):
-    """
-    Legacy 2D (3-objective) Surrogate Model. 
-    Use NDimSurrogateEquilibSolver for modern use cases.
+    """Legacy 2D (3-objective) surrogate solver with active learning.
+
+    Prefer :class:`NDimSurrogateEquilibSolver` for new code; this class is
+    retained for backward compatibility with 3-objective workflows.
     """
 
     def __init__(self,
