@@ -16,7 +16,7 @@ High-level factory function to find a topological fixed point.
 
 ## Core Classes
 
-### `NDimTopoAlignSolver(n_objs=3, subdivision=100)`
+### `NDimEquilibSolver(n_objs=3, subdivision=100)`
 Low-level engine for N-dimensional simplicial walks.
 
 - **Methods:**
@@ -39,7 +39,7 @@ Integration with Transformers/PEFT for LoRA weight merging.
 
 ---
 
-### `NDimSurrogateTopoAlignSolver(n_objs, subdivision=100, n_init_samples=25, real_oracle=None)`
+### `NDimSurrogateEquilibSolver(n_objs, subdivision=100, n_init_samples=25, real_oracle=None)`
 Accelerated solver using an active learning surrogate.
 
 - **Methods:**

@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import torch
 from typing import List, Callable, Optional, Union, Dict, Generator
-from .ndim_topo_align import NDimTopoAlignSolver
+from .ndim_solver import NDimEquilibSolver
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class SpernerTrainer:
 
     def train(self, grid_size: int = 50) -> np.ndarray:
         """High-speed synchronous training."""
-        solver = NDimTopoAlignSolver(n_objs=self.n_objs, subdivision=grid_size)
+        solver = NDimEquilibSolver(n_objs=self.n_objs, subdivision=grid_size)
         
         # Bridge the solver to our optimized oracle
         def fast_oracle(y_vec):
@@ -87,7 +87,7 @@ class SpernerTrainer:
         """
         Interactive Mode: Yields current mixing weights and waits for Human Label.
         """
-        solver = NDimTopoAlignSolver(n_objs=self.n_objs, subdivision=grid_size)
+        solver = NDimEquilibSolver(n_objs=self.n_objs, subdivision=grid_size)
         solver_gen = solver.solve_generator()
         
         try:

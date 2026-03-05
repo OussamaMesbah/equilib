@@ -1,9 +1,20 @@
 [project]
-name = "topo-align"
+name = "equilib"
 version = "0.1.0"
 description = "Gradient-free multi-objective alignment via Sperner's Lemma and implicit Freudenthal triangulation."
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Oussama Mesbah", email = "omesbah@users.noreply.github.com"}
+]
+keywords = ["pytorch", "alignment", "multi-objective", "sperner", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
@@ -27,6 +38,10 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/omesbah/equilib"
+Repository = "https://github.com/omesbah/equilib"
 
 [tool.hatch.build.targets.wheel]
 packages = ["equilib"]

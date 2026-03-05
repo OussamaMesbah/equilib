@@ -12,7 +12,7 @@ def publish(token=None, username="omesbah"):
     print(f"Authenticated as {username}")
     
     # --- 1. MODEL REPOSITORY (Code & Library) ---
-    model_id = f"{username}/topo-align"
+    model_id = f"{username}/equilib"
     print(f"\n[1/3] Preparing Model Repo: {model_id}")
     try:
         api.create_repo(repo_id=model_id, repo_type="model", exist_ok=True)
@@ -54,7 +54,7 @@ def publish(token=None, username="omesbah"):
         print(f"Error updating dataset repo: {e}")
 
     # --- 3. SPACE REPOSITORY (Interactive Demo) ---
-    space_id = f"{username}/topo-align-demo"
+    space_id = f"{username}/equilib-demo"
     print(f"\n[3/3] Preparing Space Repo: {space_id}")
     try:
         # Note: 'sdk' is correct for newer hub versions, but handled by create_repo
@@ -64,7 +64,7 @@ def publish(token=None, username="omesbah"):
             folder_path=".",
             repo_id=space_id,
             repo_type="space",
-            ignore_patterns=[".venv/*", "__pycache__/*", ".git/*", "dist/*", "data/sperner_dataset.json", "notebooks/topo_align_showcase.ipynb", "DATASET_README.md"]
+            ignore_patterns=[".venv/*", "__pycache__/*", ".git/*", "dist/*", "data/sperner_dataset.json", "DATASET_README.md"]
         )
         print("Space Demo upload complete.")
     except Exception as e:

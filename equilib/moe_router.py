@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import torch
 from typing import List, Dict, Callable
-from .ndim_topo_align import NDimTopoAlignSolver
+from .ndim_solver import NDimEquilibSolver
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class TopologicalMoERouter:
         token_dissatisfaction = expert_dissatisfaction[0, 0].detach() # [num_experts]
         
         # Set up the Topological Solver for this specific token
-        solver = NDimTopoAlignSolver(n_objs=self.num_experts, subdivision=precision)
+        solver = NDimEquilibSolver(n_objs=self.num_experts, subdivision=precision)
         
         # The Oracle maps a proposed routing weight mix to the expert that is most "starved"
         def moe_oracle(weights_batch: torch.Tensor) -> torch.Tensor:

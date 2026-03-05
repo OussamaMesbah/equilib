@@ -40,7 +40,7 @@ Equilib supports three primary workflows: **Automated**, **Manual (Human-in-the-
 Use this when you have programmatic evaluators (e.g., a benchmark suite or an LLM-as-a-Judge).
 
 ```python
-from equilib import NDimTopoAlignSolver
+from equilib import NDimEquilibSolver
 
 # 1. Define your "Judge" (Oracle)
 # It returns the INDEX of the objective that needs more weight.
@@ -51,7 +51,7 @@ def my_judge(weights):
     return 1 
 
 # 2. Solve for the Equilibrium
-solver = NDimTopoAlignSolver(n_objs=3)
+solver = NDimEquilibSolver(n_objs=3)
 optimal_weights = solver.solve(oracle_fn=my_judge)
 print(f"Optimal Balance: {optimal_weights}")
 ```
@@ -77,7 +77,7 @@ streamlit run app.py
 Balance LoRA adapters or model weights directly from the terminal.
 
 ```bash
-python tools/topo_merge.py --base meta-llama/Llama-3-8B --adapters coding-lora,safety-lora --precision 100
+python tools/equilib_merge.py --base meta-llama/Llama-3-8B --adapters coding-lora,safety-lora --precision 100
 ```
 
 ---
@@ -98,6 +98,6 @@ Equilib operates on the principle that the optimal capability mix of an LLM lies
   author = {Mesbah, Oussama},
   title = {Equilib: High-Performance Topological Alignment},
   year = {2026},
-  url = {https://github.com/omesbah/topo-align}
+  url = {https://github.com/omesbah/equilib}
 }
 ```

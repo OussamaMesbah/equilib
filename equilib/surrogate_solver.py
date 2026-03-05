@@ -6,17 +6,17 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-from .ndim_topo_align import NDimTopoAlignSolver
-from .topo_align import TopoAlignSolver
+from .ndim_solver import NDimEquilibSolver
+from .solver import EquilibSolver
 
 logger = logging.getLogger(__name__)
 
 
-class NDimSurrogateTopoAlignSolver(NDimTopoAlignSolver):
+class NDimSurrogateEquilibSolver(NDimEquilibSolver):
     """
     N-Dimensional Surrogate Solver: Active Learning over the N-Dim Simplex.
     Uses a KNN surrogate to minimize expensive real-oracle calls. Inherits from
-    NDimTopoAlignSolver so it scales to 10+ objectives with ~50 real calls instead of 500+.
+    NDimEquilibSolver so it scales to 10+ objectives with ~50 real calls instead of 500+.
     """
 
     def __init__(
@@ -40,7 +40,7 @@ class NDimSurrogateTopoAlignSolver(NDimTopoAlignSolver):
             # Fallback to the superclass's mock oracle if none provided
             def _mock_oracle(w: np.ndarray) -> int:
                 y = self._weights_to_y(w)
-                return super(NDimSurrogateTopoAlignSolver, self).oracle_label(y)
+                return super(NDimSurrogateEquilibSolver, self).oracle_label(y)
             self.real_oracle = _mock_oracle
 
         logger.info(f"Initialized N-Dim Surrogate: n_objs={n_objs}, n_init={n_init_samples}")
@@ -160,10 +160,10 @@ class NDimSurrogateTopoAlignSolver(NDimTopoAlignSolver):
         return None
 
 
-class SurrogateTopoAlignSolver(TopoAlignSolver):
+class SurrogateEquilibSolver(EquilibSolver):
     """
     Legacy 2D (3-objective) Surrogate Model. 
-    Use NDimSurrogateTopoAlignSolver for modern use cases.
+    Use NDimSurrogateEquilibSolver for modern use cases.
     """
     def __init__(self, subdivision: int = 20, n_init_samples: int = 10, real_cost_delay: float = 0.1):
         super().__init__(subdivision)

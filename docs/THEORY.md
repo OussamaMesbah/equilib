@@ -2,7 +2,8 @@
 
 ## Overview
 
-The Equilib library (Topo-Align) treats the problem of multi-objective model alignment not as a scalar optimization task, but as a search for a fixed-point equilibrium within a simplicial complex. This approach is grounded in combinatorial topology and specifically utilizes Sperner's Lemma and the Brouwer Fixed-Point Theorem.
+The Equilib library treats the problem of multi-objective model alignment not as a scalar optimization task, but as a search for a fixed-point equilibrium within a simplicial complex.
+ This approach is grounded in combinatorial topology and specifically utilizes Sperner's Lemma and the Brouwer Fixed-Point Theorem.
 
 ## The Simplicial Complex
 

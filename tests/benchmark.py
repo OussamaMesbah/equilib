@@ -8,13 +8,13 @@ import os
 if "equilib" not in sys.modules:
     sys.path.insert(0, os.path.abspath("."))
 
-from equilib.topo_align import TopoAlignSolver
-from equilib.ndim_topo_align import NDimTopoAlignSolver
-from equilib.surrogate_topo_align import NDimSurrogateTopoAlignSolver
+from equilib.solver import EquilibSolver
+from equilib.ndim_solver import NDimEquilibSolver
+from equilib.surrogate_solver import NDimSurrogateEquilibSolver
 
 def main():
     print("================================================================")
-    print("Topo-Align vs. Standard Merging Benchmark")
+    print("Equilib vs. Standard Merging Benchmark")
     print("Metric: L2 Loss (Lower is Better)")
     print("Scenario: 3 Conflicting Objectives (e.g., Coding, Creative, Safety)")
     print("================================================================")
@@ -41,7 +41,7 @@ def main():
         return loss
 
     def topo_oracle_label(w):
-        # Topo-Align requires directional feedback:
+        # Equilib requires directional feedback:
         # "Which objective weight is TOO HIGH?" (Sperner Labeling Rule)
         # We return the index of the objective with the largest POSITIVE deviation.
         # w_i - target_i > 0 ==> We have too much i ==> Label i ==> Move away from Vertex i.
@@ -71,14 +71,14 @@ def main():
     print(f"    Evals:   {linear_evals}")
 
     # ---------------------------------------------------------
-    # Benchmark 2: Topo-Align (Sperner Walk)
+    # Benchmark 2: Equilib (Sperner Walk)
     # ---------------------------------------------------------
-    print("\n[2] Running Topo-Align (Gradient-Free Search)...")
+    print("\n[2] Running Equilib (Gradient-Free Search)...")
     Metrics.evals = 0
     start_time = time.time()
     
     # Grid resolution 20 means we step in 5% increments
-    solver = TopoAlignSolver(subdivision=20)
+    solver = EquilibSolver(subdivision=20)
     
     # Inject tracked oracle
     # Inject tracked oracle with CACHING
@@ -155,14 +155,14 @@ def main():
     print("-" * 65)
     print(f"{'Linear Merge':<20} | {linear_loss:.5f}    | {linear_evals:<8} | {'-'}")
     print(f"{'Grid Search':<20} | {best_grid_loss:.5f}    | {grid_evals:<8} | {-(best_grid_loss-linear_loss)/linear_loss*100:.1f}%")
-    print(f"{'Topo-Align':<20} | {topo_loss:.5f}    | {topo_evals:<8} | {-(topo_loss-linear_loss)/linear_loss*100:.1f}%")
+    print(f"{'Equilib':<20} | {topo_loss:.5f}    | {topo_evals:<8} | {-(topo_loss-linear_loss)/linear_loss*100:.1f}%")
     print("================================================================")
     print("\nAnalysis:")
     improvement = linear_loss / topo_loss if topo_loss > 0 else 100
     efficiency = grid_evals / topo_evals
-    print(f"1. Topo-Align found a solution {improvement:.2f}x better than Linear Merge.")
-    print(f"2. Topo-Align used {efficiency:.1f}x fewer evaluations than Grid Search.")
-    print("3. Proof: Topo-Align achieves Grid Search quality with drastically fewer steps.")
+    print(f"1. Equilib found a solution {improvement:.2f}x better than Linear Merge.")
+    print(f"2. Equilib used {efficiency:.1f}x fewer evaluations than Grid Search.")
+    print("3. Proof: Equilib achieves Grid Search quality with drastically fewer steps.")
 
 if __name__ == "__main__":
     main()

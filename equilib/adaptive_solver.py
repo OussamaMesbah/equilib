@@ -1,12 +1,12 @@
 import logging
 import numpy as np
-from .topo_align import TopoAlignSolver
+from .solver import EquilibSolver
 
 logger = logging.getLogger(__name__)
 
-class AdaptiveTopoAlignSolver(TopoAlignSolver):
+class AdaptiveEquilibSolver(EquilibSolver):
     """
-    An Adaptive (Iterative Refinement) version of the Topo-Align Solver.
+    An Adaptive (Iterative Refinement) version of the Equilib Solver.
     Uses 'Zoom' technique described in Thesis Section 1.3 to achieve high precision 
     without exponential computational cost.
     """
@@ -36,7 +36,7 @@ class AdaptiveTopoAlignSolver(TopoAlignSolver):
         """
         Runs the iterative 'Zoom' process.
         """
-        logger.info(f"Starting Adaptive Topo-Align (Depth {self.max_depth}, Grid {self.n})...")
+        logger.info(f"Starting Adaptive Equilib (Depth {self.max_depth}, Grid {self.n})...")
         
         final_tri = None
         global_tri_weights = []
@@ -99,5 +99,5 @@ class AdaptiveTopoAlignSolver(TopoAlignSolver):
 if __name__ == "__main__":
     # Run Adaptive Solver
     # Start with a coarse grid (n=10) but zoom in 10 times.
-    solver = AdaptiveTopoAlignSolver(subdivision=10, max_depth=10, precision=1e-7)
+    solver = AdaptiveEquilibSolver(subdivision=10, max_depth=10, precision=1e-7)
     solver.solve_adaptive()

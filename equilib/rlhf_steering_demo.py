@@ -44,9 +44,9 @@ class RLHFSteeringOracle:
         scores = np.clip([score_h, score_s, score_v], 0, 1)
         return scores
 
-from equilib.topo_align import TopoAlignSolver
+from equilib.solver import EquilibSolver
 
-class RLHFSteeringSolver(TopoAlignSolver):
+class RLHFSteeringSolver(EquilibSolver):
     def __init__(self, subdivision=20, targets=None):
         super().__init__(subdivision)
         # We define targets for our metrics.
@@ -71,7 +71,7 @@ class RLHFSteeringSolver(TopoAlignSolver):
         # Loss = (Target - Actual)^2? 
         # Or simpler: If Metric < Target, we need MORE weight.
         # If Metric > Target, we might need LESS (or it doesn't matter).
-        # Standard Topo-Align uses (w - target)^2 logic for weights themselves.
+        # Standard Equilib uses (w - target)^2 logic for weights themselves.
         # Here we map Metrics to "Demand for Weight".
         
         # Let's say: Loss = Target - Metric. (We want to maximize metric up to target)
@@ -82,7 +82,7 @@ class RLHFSteeringSolver(TopoAlignSolver):
         
         # Boundary Conditions for Sperner Lemma:
         # If weight i is 0, we MUST NOT choose Label i ?
-        # Actually Topo-Align logic is:
+        # Actually Equilib logic is:
         # If w_i = 0, we want to label it i to push it away from 0?
         # No, standard Sperner coloring boundaries are:
         # At V0 (1,0,0), label is 0.
@@ -152,7 +152,7 @@ class RLHFSteeringSolver(TopoAlignSolver):
         
         return np.argmax(losses)
 
-from equilib.ndim_topo_align import NDimTopoAlignSolver
+from equilib.ndim_solver import NDimEquilibSolver
 
 if __name__ == "__main__":
     logger.info("--- RLHF Steering Demo (3 Objectives) ---")
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     # 2. Setup Solver (using the N-Dim Engine)
     # Target Metrics: [Helpfulness=0.7, Safety=0.8, Verbosity=0.4]
     targets = np.array([0.7, 0.8, 0.4])
-    solver = NDimTopoAlignSolver(n_objs=3, subdivision=30)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=30)
     
     # 3. Override the Solver's label function to use our RLHF Oracle
     def rlhf_label(weights_batch: torch.Tensor) -> torch.Tensor:

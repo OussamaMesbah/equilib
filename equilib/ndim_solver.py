@@ -8,7 +8,7 @@ class SpernerConvergenceError(Exception):
     """Raised when the Sperner walk fails to converge."""
     pass
 
-class NDimTopoAlignSolver:
+class NDimEquilibSolver:
     """
     2026 Production Engine: PyTorch-Native N-Dimensional Topological Solver.
     Uses dimension-lifting on a Kuhn/Freudenthal triangulation.

@@ -2,7 +2,7 @@
 
 ## Core Modules
 
-### 1. NDimTopoAlignSolver (`equilib.ndim_topo_align`)
+### 1. NDimEquilibSolver (`equilib.ndim_solver`)
 This is the central mathematical engine of the library. It implements the N-dimensional Sperner walk using an implicit Freudenthal triangulation.
 - **Implicit Grid**: Calculates neighbors "on-the-fly" using algebraic pivoting, avoiding memory issues associated with large explicit grids ($O(N)$ memory scaling).
 - **Dimension Lifting**: Solves high-dimensional problems by recursively solving smaller sub-simplex boundaries.
@@ -12,7 +12,7 @@ A high-level utility for integrating the topological solver with PEFT (Parameter
 - **LoRA Support**: Automatically merges multiple LoRA adapters using the weights discovered by the solver.
 - **Objective Wrapper**: Converts standard loss functions or human preference judges into labels required by the solver.
 
-### 3. NDimSurrogateTopoAlignSolver (`equilib.surrogate_topo_align`)
+### 3. NDimSurrogateEquilibSolver (`equilib.surrogate_solver`)
 Accelerates alignment in high-dimensional or expensive objective spaces.
 - **Active Learning**: Uses K-Nearest Neighbors (KNN) or Random Forests to learn a surrogate model of the alignment landscape.
 - **Oracle Optimization**: Reduces the number of calls to the "expensive" real-world objective function (e.g., human-in-the-loop or slow LLM judge).

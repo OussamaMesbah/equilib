@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import torch
 from typing import List, Dict, Callable
-from .ndim_topo_align import NDimTopoAlignSolver
+from .ndim_solver import NDimEquilibSolver
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class AutoModelMerger:
         """
         logger.info(f"Starting Industrial Alignment for: {self.capability_names}")
         
-        solver = NDimTopoAlignSolver(n_objs=len(self.adapter_ids), subdivision=precision, device=self.device)
+        solver = NDimEquilibSolver(n_objs=len(self.adapter_ids), subdivision=precision, device=self.device)
         
         def industrial_oracle(weights_batch: torch.Tensor) -> torch.Tensor:
             """

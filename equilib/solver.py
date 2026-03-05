@@ -3,7 +3,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class TopoAlignSolver:
+class EquilibSolver:
     def __init__(self, subdivision=10):
         """
         Initializes the solver for a 3-objective problem (2-Simplex).
@@ -85,7 +85,7 @@ class TopoAlignSolver:
         Performs the Sperner Walk (Thesis Section 1.2).
         Moves from triangle to triangle until a panchromatic one is found.
         """
-        logger.info(f"Starting Topo-Align Walk (Grid Size {self.n})...")
+        logger.info(f"Starting Equilib Walk (Grid Size {self.n})...")
         
         # 1. Find entrance on boundary
         current_edge = self.find_start_edge()
@@ -229,7 +229,7 @@ class TopoAlignSolver:
         return current_tri, path_triangles
 
 if __name__ == "__main__":
-    solver = TopoAlignSolver(subdivision=20)
+    solver = EquilibSolver(subdivision=20)
     result, _ = solver.walk()
     
     if result:
@@ -237,3 +237,4 @@ if __name__ == "__main__":
          cy = sum(p[1] for p in result)/3
          fw = solver.weights_from_coords(cx, cy)
          print(f"Optimal Weights: {fw}", flush=True)
+

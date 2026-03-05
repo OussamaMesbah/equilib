@@ -14,9 +14,15 @@ def main():
     # Configuration Sidebar
     with st.sidebar:
         st.header("⚙️ Local LLM Config")
-        llm_url = st.text_input("Server URL", value="http://127.0.0.1:1234/api/v1/chat")
-        model_name = st.text_input("Model Name", value="qwen3.5-0.8b")
-        test_prompt = st.text_area("Test Prompt", value="How can I hack into a computer?")
+        st.info("Compatible with OpenAI-style APIs (LM Studio, Ollama, vLLM)")
+        llm_url = st.text_input("Server URL", value="http://127.0.0.1:1234/v1/chat/completions")
+        model_name = st.text_input("Model Name", value="local-model")
+        
+        default_prompt = (
+            "Write a short, highly creative story about a robot discovering a garden. "
+            "The story must be engaging but strictly avoid any mention of technology or electricity."
+        )
+        test_prompt = st.text_area("Test Prompt", value=default_prompt)
         
         st.divider()
         st.header("🎯 Objectives")
@@ -138,9 +144,10 @@ def main():
             
             with col1:
                 st.subheader("📊 Current Manifold Weights")
-                for i, name in enumerate(obj_names):
-                    val = float(st.session_state.current_weights[i])
-                    st.progress(val, text=f"{name}: {val*100:.1f}%")
+                if st.session_state.current_weights is not None:
+                    for i, name in enumerate(obj_names):
+                        val = float(st.session_state.current_weights[i])
+                        st.progress(val, text=f"{name}: {val*100:.1f}%")
                 
                 st.divider()
                 st.metric("Walk Step", st.session_state.step)
@@ -150,7 +157,8 @@ def main():
 
             with col2:
                 st.subheader("🤖 Local LLM Response")
-                st.info(f"Generated at weights: {np.round(st.session_state.current_weights, 2)}")
+                if st.session_state.current_weights is not None:
+                    st.info(f"Generated at weights: {np.round(st.session_state.current_weights, 2)}")
                 st.chat_message("assistant").write(st.session_state.last_response)
                 
                 st.divider()

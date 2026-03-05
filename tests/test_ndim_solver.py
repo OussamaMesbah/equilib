@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import pytest
-from equilib import NDimTopoAlignSolver, SpernerConvergenceError
+from equilib import NDimEquilibSolver, SpernerConvergenceError
 
 def test_initialization():
-    solver = NDimTopoAlignSolver(n_objs=4, subdivision=10)
+    solver = NDimEquilibSolver(n_objs=4, subdivision=10)
     assert solver.n_objs == 4
     assert solver.d == 3
     assert solver.n_sub == 10
@@ -12,7 +12,7 @@ def test_initialization():
     assert torch.isclose(solver.targets.sum(), torch.tensor(1.0))
 
 def test_barycentric_weights_mapping():
-    solver = NDimTopoAlignSolver(n_objs=3, subdivision=10)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=10)
     # Origin of hypercube maps to Vertex 0 [1, 0, 0]
     # We must pass a 2D tensor for batch mode [batch_size, d]
     y_origin = torch.tensor([[0, 0]], dtype=torch.long)
@@ -25,7 +25,7 @@ def test_barycentric_weights_mapping():
     assert torch.allclose(w_corner, torch.tensor([[0.0, 0.0, 1.0]]))
 
 def test_solve_convergence_3d():
-    solver = NDimTopoAlignSolver(n_objs=3, subdivision=20)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=20)
     target = torch.tensor([0.4, 0.4, 0.2])
     
     # Define a simple oracle for the test

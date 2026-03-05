@@ -4,10 +4,10 @@ import torch
 from equilib.industrial import AutoModelMerger
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("topo-merge")
-
+logger = logging.getLogger("equilib-merge")
 def main():
-    parser = argparse.ArgumentParser(description="Equilib Topo-Merge: Automated Simplicial Adapter Merging.")
+    parser = argparse.ArgumentParser(description="Equilib Merge: Automated Simplicial Adapter Merging.")
+
     parser.add_argument("--base", type=str, required=True, help="Base model ID (HuggingFace)")
     parser.add_argument("--adapters", type=str, required=True, help="Comma-separated LoRA adapter IDs")
     parser.add_argument("--precision", type=int, default=50, help="Grid subdivision (resolution)")

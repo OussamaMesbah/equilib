@@ -3,7 +3,7 @@ import getpass
 import sys
 
 def secure_login():
-    print("--- Topo-Align Hugging Face Authentication ---")
+    print("--- Equilib Hugging Face Authentication ---")
     print("Please generate a 'Write' token at: https://huggingface.co/settings/tokens")
     try:
         token = getpass.getpass("Paste your Hugging Face Write Token (input is hidden): ")

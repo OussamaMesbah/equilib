@@ -6,7 +6,7 @@ import numpy as np
 # Add project root to path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from equilib.ndim_topo_align import NDimTopoAlignSolver
+from equilib.ndim_solver import NDimEquilibSolver
 
 def simulate_llm_eval(weights: np.ndarray):
     """
@@ -39,7 +39,7 @@ def main():
 
     # Initialize the N-Dimensional Solver (n_objs=3)
     # subdivision=50 defines the precision of the search grid.
-    solver = NDimTopoAlignSolver(n_objs=3, subdivision=50)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=50)
 
     # Define the "Judge" (Oracle Function)
     # This function tells Equilib which objective is currently MOST UNSATISFIED.

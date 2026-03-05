@@ -4,17 +4,17 @@ Equilib: A Topological Fixed-Point Alignment Library.
 
 __version__ = "0.1.0"
 
-from .ndim_topo_align import NDimTopoAlignSolver, SpernerConvergenceError
+from .ndim_solver import NDimEquilibSolver, SpernerConvergenceError
 from .sperner_trainer import SpernerTrainer
-from .surrogate_topo_align import NDimSurrogateTopoAlignSolver, SurrogateTopoAlignSolver
-from .topo_align import TopoAlignSolver
+from .surrogate_solver import NDimSurrogateEquilibSolver, SurrogateEquilibSolver
+from .solver import EquilibSolver
 
 # Easy-access factory or alias for the most advanced solver
 def solve_equilibrium(n_objs: int, subdivision: int = 100, oracle=None):
     """
     High-level utility to solve an equilibrium problem.
     """
-    solver = NDimTopoAlignSolver(n_objs=n_objs, subdivision=subdivision)
+    solver = NDimEquilibSolver(n_objs=n_objs, subdivision=subdivision)
     if oracle:
         # If a blocking oracle is provided, wrap the solver
         def wrapped_oracle(y):
@@ -24,11 +24,11 @@ def solve_equilibrium(n_objs: int, subdivision: int = 100, oracle=None):
     return solver
 
 __all__ = [
-    "NDimTopoAlignSolver",
-    "NDimSurrogateTopoAlignSolver",
+    "NDimEquilibSolver",
+    "NDimSurrogateEquilibSolver",
     "SpernerTrainer",
-    "TopoAlignSolver",
-    "SurrogateTopoAlignSolver",
+    "EquilibSolver",
+    "SurrogateEquilibSolver",
     "SpernerConvergenceError",
     "solve_equilibrium",
 ]

@@ -39,9 +39,9 @@ class AgenticEquilibriumJudge:
 
 def auto_align_batch(n_objs: int, batch_size: int = 128, device: str = "cpu"):
     """Plug-and-play batch alignment."""
-    from .ndim_topo_align import NDimTopoAlignSolver
+    from .ndim_solver import NDimEquilibSolver
     
     judge = AgenticEquilibriumJudge(metrics=[f"cap_{i}" for i in range(n_objs)], device=device)
-    solver = NDimTopoAlignSolver(n_objs=n_objs, device=device)
+    solver = NDimEquilibSolver(n_objs=n_objs, device=device)
     
     return solver.solve(oracle_fn=judge.get_labels, batch_size=batch_size)
