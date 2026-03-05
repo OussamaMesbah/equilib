@@ -3,6 +3,7 @@
 **Find the optimal balance between competing objectives — without gradients, without grid search, with a mathematical guarantee.**
 
 [![Tests](https://github.com/OussamaMesbah/sperner/actions/workflows/test.yml/badge.svg)](https://github.com/OussamaMesbah/sperner/actions/workflows/test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/sperner.svg)](https://pypi.org/project/sperner/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -53,16 +54,22 @@ This works because of **Sperner's Lemma** (1928): any valid labeling of a triang
 ## Installation
 
 ```bash
-pip install .
+pip install sperner
+
+# Latest from source
+pip install git+https://github.com/OussamaMesbah/sperner.git
+
+# Local editable install
+pip install -e .
 
 # With LoRA/PEFT support
-pip install ".[peft]"
+pip install "sperner[peft]"
 
 # With Streamlit human-in-the-loop UI
-pip install ".[ui]"
+pip install "sperner[ui]"
 
 # Everything
-pip install ".[all]"
+pip install "sperner[all]"
 ```
 
 ## Quick start
