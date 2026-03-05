@@ -42,7 +42,7 @@ def solve_equilibrium(
 
     Example::
 
-        >>> from equilib import solve_equilibrium
+        >>> from sperner import solve_equilibrium
         >>> weights = solve_equilibrium(3, subdivision=20,
         ...     oracle=lambda w: int(np.argmax([0.4, 0.4, 0.2] - w)))
     """

@@ -51,7 +51,7 @@ class AdaptiveEquilibSolver(EquilibSolver):
         Runs the iterative 'Zoom' process.
         """
         logger.info(
-            f"Starting Adaptive Equilib (Depth {self.max_depth}, Grid {self.n})..."
+            f"Starting Adaptive Sperner (Depth {self.max_depth}, Grid {self.n})..."
         )
 
         final_tri = None

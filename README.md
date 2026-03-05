@@ -1,22 +1,22 @@
-# Equilib
+# Sperner
 
 **Find the optimal balance between competing objectives — without gradients, without grid search, with a mathematical guarantee.**
 
-[![Tests](https://github.com/OussamaMesbah/equilib/actions/workflows/test.yml/badge.svg)](https://github.com/OussamaMesbah/equilib/actions/workflows/test.yml)
+[![Tests](https://github.com/OussamaMesbah/sperner/actions/workflows/test.yml/badge.svg)](https://github.com/OussamaMesbah/sperner/actions/workflows/test.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## What does Equilib do?
+## What does Sperner do?
 
 You have an LLM (or any system) with **N competing objectives** — Safety vs. Helpfulness vs. Creativity, or Precision vs. Recall vs. Latency. You need to find the weight mix where everything is "good enough" simultaneously.
 
-**Equilib solves this in O(N) evaluations** using a topological fixed-point algorithm (Sperner's Lemma), instead of the O(X^N) brute-force grid search.
+**Sperner solves this in O(N) evaluations** using a topological fixed-point algorithm (Sperner's Lemma), instead of the O(X^N) brute-force grid search.
 
 ```python
 # Find the optimal balance between 3 objectives in ~50 evaluations
-from equilib import solve_equilibrium
+from sperner import solve_equilibrium
 
 weights = solve_equilibrium(
     n_objs=3,
@@ -25,7 +25,7 @@ weights = solve_equilibrium(
 # weights ≈ [0.35, 0.40, 0.25] — the Nash equilibrium
 ```
 
-### When to use Equilib
+### When to use Sperner
 
 | Use case                        | Example                                            |
 | :------------------------------ | :------------------------------------------------- |
@@ -41,12 +41,12 @@ The only requirement: you need an oracle that, given a weight vector, tells you 
 
 ## How it works (30-second version)
 
-1. Equilib places your N objectives on an **N-simplex** (triangle for 3, tetrahedron for 4, etc.)
+1. Sperner places your N objectives on an **N-simplex** (triangle for 3, tetrahedron for 4, etc.)
 2. It subdivides the simplex into a fine grid and labels each point by asking your oracle: "at these weights, which objective is weakest?"
 3. It performs a **Sperner walk** — a combinatorial path through the grid that is *mathematically guaranteed* to find a cell where all labels meet (a "panchromatic simplex")
 4. The centroid of that cell is your equilibrium — the weight mix where no single objective dominates
 
-This works because of **Sperner's Lemma** (1928): any valid labeling of a triangulated simplex *must* contain at least one fully-labeled cell. Equilib exploits this to find it in linear time.
+This works because of **Sperner's Lemma** (1928): any valid labeling of a triangulated simplex *must* contain at least one fully-labeled cell. Sperner exploits this to find it in linear time.
 
 ---
 
@@ -71,7 +71,7 @@ pip install ".[all]"
 
 ```python
 import numpy as np
-from equilib import NDimEquilibSolver
+from sperner import NDimEquilibSolver
 import torch
 
 solver = NDimEquilibSolver(n_objs=4, subdivision=50)
@@ -101,7 +101,7 @@ The UI supports 2–10 configurable objectives and works with any OpenAI-compati
 ### LoRA adapter merging
 
 ```python
-from equilib import SpernerTrainer
+from sperner import SpernerTrainer
 
 trainer = SpernerTrainer(
     base_model=my_peft_model,
@@ -115,7 +115,7 @@ optimal_mix = trainer.train(grid_size=50)
 ### MoE expert routing
 
 ```python
-from equilib import TopologicalMoERouter
+from sperner import TopologicalMoERouter
 
 router = TopologicalMoERouter(num_experts=8, latent_dim=4096)
 weights = router.forward_route(hidden_states, precision=20)
@@ -126,7 +126,7 @@ weights = router.forward_route(hidden_states, precision=20)
 
 ## Comparison
 
-|                                 | Grid Search        | Bayesian Opt  | **Equilib**      |
+|                                 | Grid Search        | Bayesian Opt  | **Sperner**      |
 | :------------------------------ | :----------------- | :------------ | :--------------- |
 | **Oracle calls**                | O(X^N) exponential | O(N²) typical | **O(N) linear**  |
 | **Needs gradients**             | No                 | No            | **No**           |
@@ -139,7 +139,7 @@ weights = router.forward_route(hidden_states, precision=20)
 ## Project structure
 
 ```
-equilib/
+sperner/
   ndim_solver.py       # Core N-dimensional Sperner walk (PyTorch)
   solver.py            # Legacy 2D solver
   adaptive_solver.py   # Iterative zoom refinement
@@ -162,11 +162,11 @@ equilib/
 ## Citation
 
 ```bibtex
-@software{mesbah2026equilib,
+@software{mesbah2026sperner,
   author = {Mesbah, Oussama},
-  title = {Equilib: Gradient-Free Multi-Objective Alignment via Sperner's Lemma},
+  title = {Sperner: Gradient-Free Multi-Objective Alignment via Sperner's Lemma},
   year = {2026},
-  url = {https://github.com/OussamaMesbah/equilib}
+  url = {https://github.com/OussamaMesbah/sperner}
 }
 ```
 

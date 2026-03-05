@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import pytest
-from equilib import NDimEquilibSolver, SpernerConvergenceError, solve_equilibrium
+from sperner import NDimEquilibSolver, SpernerConvergenceError, solve_equilibrium
 
 
 def test_initialization():

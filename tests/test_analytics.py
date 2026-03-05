@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from equilib.analytics import calculate_frustration_score
+from sperner.analytics import calculate_frustration_score
 
 
 def test_straight_line_frustration():

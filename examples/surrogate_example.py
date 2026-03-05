@@ -6,7 +6,7 @@ oracle calls from hundreds down to ~20-50.
 """
 
 import numpy as np
-from equilib import NDimSurrogateEquilibSolver
+from sperner import NDimSurrogateEquilibSolver
 
 
 def expensive_evaluator(weights: np.ndarray) -> int:

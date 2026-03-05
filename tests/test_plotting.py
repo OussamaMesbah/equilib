@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from equilib.plotting import _simplex_to_xy, _grid_3simplex
+from sperner.plotting import _simplex_to_xy, _grid_3simplex
 
 # Only test non-matplotlib functions to avoid display issues in CI
 

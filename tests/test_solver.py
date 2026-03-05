@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from equilib.solver import EquilibSolver
+from sperner.solver import EquilibSolver
 
 
 def test_solver_init():

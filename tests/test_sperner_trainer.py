@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from equilib.sperner_trainer import SpernerTrainer, BaseObjective
+from sperner.sperner_trainer import SpernerTrainer, BaseObjective
 
 
 def test_base_objective_raises():

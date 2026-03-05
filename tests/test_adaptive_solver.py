@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from equilib.adaptive_solver import AdaptiveEquilibSolver
+from sperner.adaptive_solver import AdaptiveEquilibSolver
 
 
 def test_adaptive_solver_init():

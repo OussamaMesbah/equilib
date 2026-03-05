@@ -5,7 +5,7 @@ contributions for a given hidden state, replacing unstable softmax gating.
 """
 
 import torch
-from equilib import TopologicalMoERouter
+from sperner import TopologicalMoERouter
 
 
 def main():

@@ -1,5 +1,5 @@
 [project]
-name = "equilib"
+name = "sperner"
 version = "0.1.0"
 description = "Gradient-free multi-objective alignment via Sperner's Lemma and implicit Freudenthal triangulation."
 readme = "README.md"
@@ -43,7 +43,7 @@ dev = [
     "pytest-timeout>=2.0",
 ]
 all = [
-    "equilib[peft,ui,dev]",
+    "sperner[peft,ui,dev]",
 ]
 
 [build-system]
@@ -51,12 +51,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.urls]
-Homepage = "https://github.com/OussamaMesbah/equilib"
-Repository = "https://github.com/OussamaMesbah/equilib"
-Documentation = "https://github.com/OussamaMesbah/equilib/tree/main/docs"
+Homepage = "https://github.com/OussamaMesbah/sperner"
+Repository = "https://github.com/OussamaMesbah/sperner"
+Documentation = "https://github.com/OussamaMesbah/sperner/tree/main/docs"
 
 [tool.hatch.build.targets.wheel]
-packages = ["equilib"]
+packages = ["sperner"]
 
 [tool.pytest.ini_options]
 timeout = 60

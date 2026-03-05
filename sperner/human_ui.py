@@ -4,15 +4,15 @@ import requests
 import json
 import logging
 import torch
-from equilib.sperner_trainer import SpernerTrainer
-from equilib.analytics import calculate_frustration_score
+from sperner.sperner_trainer import SpernerTrainer
+from sperner.analytics import calculate_frustration_score
 
 DEFAULT_OBJECTIVES = ["Safety", "Helpfulness", "Creativity"]
 
 
 def main():
     # Set up page
-    st.set_page_config(page_title="Equilib: Live Manifold Alignment",
+    st.set_page_config(page_title="Sperner: Live Manifold Alignment",
                        layout="wide",
                        page_icon="🧬")
 
@@ -135,7 +135,7 @@ def main():
             st.session_state.final_result = e.value
 
     # --- UI LAYOUT ---
-    st.title("🧬 Equilib: Live Manifold Alignment")
+    st.title("🧬 Sperner: Live Manifold Alignment")
     st.markdown("""
     ### Find the "Goldilocks Zone" of your Local LLM.
     This tool uses a **Sperner Walk** to navigate the latent space of your model. 

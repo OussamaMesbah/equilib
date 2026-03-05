@@ -2,7 +2,7 @@
 
 import torch
 import pytest
-from equilib.moe_router import TopologicalMoERouter
+from sperner.moe_router import TopologicalMoERouter
 
 
 def test_router_init():

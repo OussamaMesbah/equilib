@@ -1,11 +1,11 @@
 import numpy as np
 import torch
 import pytest
-from equilib.industrial import AutoModelMerger
-from equilib.agentic_judge import AgenticEquilibriumJudge
-from equilib.surrogate_solver import NDimSurrogateEquilibSolver
-from equilib.analytics import calculate_frustration_score
-from equilib.solver import EquilibSolver
+from sperner.industrial import AutoModelMerger
+from sperner.agentic_judge import AgenticEquilibriumJudge
+from sperner.surrogate_solver import NDimSurrogateEquilibSolver
+from sperner.analytics import calculate_frustration_score
+from sperner.solver import EquilibSolver
 
 
 def test_agentic_judge_batch():

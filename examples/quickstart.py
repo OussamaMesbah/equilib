@@ -1,8 +1,8 @@
-"""Equilib Quickstart — Find optimal weights for 3 conflicting objectives."""
+"""Sperner Quickstart — Find optimal weights for 3 conflicting objectives."""
 
 import numpy as np
 import torch
-from equilib import NDimEquilibSolver
+from sperner import NDimEquilibSolver
 
 
 def simulate_llm_eval(weights: np.ndarray) -> np.ndarray:
