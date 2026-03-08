@@ -177,6 +177,13 @@ sperner/
 }
 ```
 
+## ☕ Support the Project
+
+If you find this tool useful, consider supporting the development:
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >](https://www.buymeacoffee.com/omesbahf)
+
+
 ## License
 
 MIT
