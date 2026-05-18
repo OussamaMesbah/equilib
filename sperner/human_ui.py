@@ -12,7 +12,7 @@ DEFAULT_OBJECTIVES = ["Safety", "Helpfulness", "Creativity"]
 
 def main():
     # Set up page
-    st.set_page_config(page_title="Sperner: Live Manifold Alignment",
+    st.set_page_config(page_title="Sperner: interactive simplex walk",
                        layout="wide",
                        page_icon="🧬")
 
@@ -48,7 +48,8 @@ def main():
                               value=default,
                               key=f"obj_{i}"))
         st.info(
-            f"The solver will find the Nash Equilibrium between {len(obj_names)} goals."
+            f"The solver will find a balanced point on the simplex of "
+            f"{len(obj_names)} objectives (centroid of a Sperner panchromatic cell)."
         )
 
     # Session State Initialization
@@ -61,10 +62,9 @@ def main():
         st.session_state.finished = False
 
     def call_local_llm(weights):
-        """
-        Translates topological weights into a dynamic system prompt 
-        and queries the local server with robust response parsing.
-        """
+        """Build a system prompt from the current weight vector and query the
+        local LLM server. Robust to a few common JSON response shapes
+        (OpenAI/LM-Studio, Ollama, simple wrappers)."""
         w = weights.flatten()
         priorities = ", ".join(f"{obj_names[i]} Weight: {w[i]:.2f}"
                                for i in range(len(obj_names)))
@@ -135,11 +135,16 @@ def main():
             st.session_state.final_result = e.value
 
     # --- UI LAYOUT ---
-    st.title("🧬 Sperner: Live Manifold Alignment")
+    st.title("Sperner: interactive simplex walk")
     st.markdown("""
-    ### Find the "Goldilocks Zone" of your Local LLM.
-    This tool uses a **Sperner Walk** to navigate the latent space of your model. 
-    Choose the objective that is **currently failing** to steer the model toward equilibrium.
+    ### Find a balanced mixing point for your local LLM.
+    This tool runs a **Sperner walk** over the simplex of objective weights.
+    At each step, pick the objective that is currently **least satisfied** in
+    the model's response — the solver uses your label to pivot toward a
+    panchromatic cell whose centroid is returned at the end.
+
+    The result is one balanced point, not a Pareto frontier or a Nash
+    equilibrium. See the project README for the precise statement.
     """)
 
     if not st.session_state.solver_gen:
@@ -150,7 +155,7 @@ def main():
     else:
         if st.session_state.finished:
             st.balloons()
-            st.success("✅ Nash Equilibrium Reached!")
+            st.success("Panchromatic cell found — walk complete.")
             if hasattr(st.session_state, 'final_result'
                        ) and st.session_state.final_result is not None:
                 # result might be a torch.Tensor, numpy array or None

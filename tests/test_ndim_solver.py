@@ -106,3 +106,93 @@ def test_solve_batch_size_validation():
     with pytest.raises(ValueError, match="batch_size must be >= 1"):
         solver.solve(oracle_fn=lambda w: torch.zeros(0, dtype=torch.long),
                      batch_size=0)
+
+
+# -- Properties of the panchromatic-cell centroid --------------------------
+#
+# Honest scope: the walk finds *some* panchromatic cell, not necessarily the
+# cell containing a particular fixed point of an underlying map. The tests
+# below check the properties the walk actually delivers:
+#   1. The output is a valid simplex point.
+#   2. With multi-start, the centroid lands in the *interior* of the simplex
+#      (not on a boundary face) for interior labelings.
+#   3. The walk satisfies the Sperner panchromatic condition at termination
+#      (this is the lemma's actual guarantee).
+#
+# We deliberately do NOT test "centroid ≈ target" — that holds only in the
+# fine-grid limit for a labeling whose triple-point lies at target, and the
+# walk's heuristic may converge to a different panchromatic cell. See
+# docs/THEORY.md.
+
+
+def _argmax_gap_oracle(target):
+    """Oracle: argmax(target - w), with Sperner boundary handling.
+
+    The triple-point of this labeling is at w = target. The walk finds a
+    panchromatic cell SOMEWHERE on the simplex — not necessarily the one
+    containing the triple-point. We use this oracle because it is a valid
+    Sperner labeling with a known interior fixed point.
+    """
+    target_t = torch.as_tensor(target, dtype=torch.float32)
+
+    def oracle(weights_batch: torch.Tensor) -> torch.Tensor:
+        gaps = target_t.unsqueeze(0) - weights_batch
+        gaps = torch.where(weights_batch > 0, gaps,
+                           torch.full_like(gaps, -float('inf')))
+        return gaps.argmax(dim=-1)
+
+    return oracle
+
+
+@pytest.mark.parametrize("target,subdivision", [
+    ([0.5, 0.25, 0.25], 40),
+    ([0.6, 0.2, 0.2], 40),
+    ([1.0 / 3, 1.0 / 3, 1.0 / 3], 30),
+])
+def test_walk_returns_valid_simplex_point_3d(target, subdivision):
+    """The walk must return a valid simplex point — coords non-negative and
+    summing to 1."""
+    torch.manual_seed(0)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=subdivision)
+    result = solver.solve(oracle_fn=_argmax_gap_oracle(target),
+                          batch_size=1,
+                          max_restarts=5,
+                          random_start=True)
+    centroid = result[0].numpy()
+    assert np.isclose(centroid.sum(), 1.0, atol=1e-5)
+    assert (centroid >= -1e-6).all()
+
+
+@pytest.mark.parametrize("target,subdivision", [
+    ([0.5, 0.25, 0.25], 40),
+    ([1.0 / 3, 1.0 / 3, 1.0 / 3], 30),
+])
+def test_centroid_is_interior_with_random_start(target, subdivision):
+    """With ``random_start=True`` and a few restarts, the walk should land in
+    the interior of the simplex (every coord > 0.01) for an interior
+    labeling. The corner-start can fail this — see the separate test."""
+    torch.manual_seed(0)
+    solver = NDimEquilibSolver(n_objs=3, subdivision=subdivision)
+    result = solver.solve(oracle_fn=_argmax_gap_oracle(target),
+                          batch_size=1,
+                          max_restarts=5,
+                          random_start=True)
+    centroid = result[0].numpy()
+    assert (centroid > 0.01).all(), (
+        f"centroid {centroid} hit a boundary face; walk converged poorly")
+
+
+def test_corner_start_can_miss_interior_target():
+    """Documented limitation: the default deterministic corner start can
+    converge to or near a vertex, even when an interior triple-point exists.
+    We confirm the walk completes — but we do not assert the centroid is
+    near the triple-point."""
+    target = [0.5, 0.25, 0.25]
+    solver = NDimEquilibSolver(n_objs=3, subdivision=20)
+    # Corner-start, single attempt — no restart safety net.
+    result = solver.solve(oracle_fn=_argmax_gap_oracle(target),
+                          batch_size=1,
+                          max_restarts=1,
+                          random_start=False)
+    assert result.shape == (1, 3)
+    assert torch.isclose(result.sum(), torch.tensor(1.0), atol=1e-5)

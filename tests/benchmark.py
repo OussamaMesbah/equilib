@@ -14,17 +14,19 @@ from sperner.surrogate_solver import NDimSurrogateEquilibSolver
 
 def main():
     print("================================================================")
-    print("Sperner vs. Standard Merging Benchmark")
-    print("Metric: L2 Loss (Lower is Better)")
-    print(
-        "Scenario: 3 Conflicting Objectives (e.g., Coding, Creative, Safety)")
+    print("Sperner vs. naive baselines — best-case demonstration")
+    print("Metric: L2 distance to a known optimum on a quadratic-bowl oracle")
     print("================================================================")
+    print()
+    print("WARNING: This is a best-case demo, not a general benchmark.")
+    print("The oracle is a deterministic quadratic bowl with a fixed")
+    print("optimum and the labeling is constructed to satisfy the Sperner")
+    print("boundary condition by design. No noise, no incommensurable")
+    print("objectives, no comparison to Bayesian optimization or NSGA-II.")
+    print("Real-world problems do not look like this.")
+    print()
 
-    # 1. Define Synthetic Oracle (The Search Landscape)
-    # Let's say the optimal mix is NOT the center.
-    # Center = [0.33, 0.33, 0.33]
-    # Optimal = [0.1, 0.8, 0.1]  (Strongly favors Objective 1, e.g., Creative Writing)
-
+    # 3 objectives. The optimum is in the interior of the simplex.
     TARGET_OPTIMAL = np.array([0.1, 0.8, 0.1])
 
     class Metrics:
@@ -165,18 +167,18 @@ def main():
         f"{'Sperner':<20} | {topo_loss:.5f}    | {topo_evals:<8} | {-(topo_loss-linear_loss)/linear_loss*100:.1f}%"
     )
     print("================================================================")
-    print("\nAnalysis:")
+    print("\nAnalysis (on this best-case synthetic oracle only):")
     improvement = linear_loss / topo_loss if topo_loss > 0 else 100
     efficiency = grid_evals / topo_evals
     print(
-        f"1. Sperner found a solution {improvement:.2f}x better than Linear Merge."
-    )
+        f"1. Sperner's centroid has {improvement:.2f}x lower loss than the "
+        f"linear average baseline.")
     print(
-        f"2. Sperner used {efficiency:.1f}x fewer evaluations than Grid Search."
-    )
+        f"2. Sperner used {efficiency:.1f}x fewer oracle calls than the "
+        f"exhaustive grid search.")
     print(
-        "3. Proof: Sperner achieves Grid Search quality with drastically fewer steps."
-    )
+        "3. This does NOT generalize to noisy oracles, real LLM benchmarks, "
+        "or incommensurable objectives. See README.md § Honest limits.")
 
 
 if __name__ == "__main__":

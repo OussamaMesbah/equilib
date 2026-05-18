@@ -10,13 +10,24 @@ logger = logging.getLogger(__name__)
 
 
 class AutoModelMerger:
-    """Production-grade model merger using topological alignment.
+    """Thin wrapper that maps adapter names to simplex dimensions and runs
+    an :class:`NDimEquilibSolver` against a user-supplied list of scalar
+    evaluators.
 
-    Finds the Nash equilibrium of conflicting model capabilities by mapping
-    each capability to a simplex dimension and running a Sperner walk.
+    Returns the centroid of the panchromatic cell found by the walk, as a
+    ``{adapter_name: weight}`` dictionary. This is a convenience wrapper —
+    the actual adapter blending is left to the caller, since merging
+    semantics vary by framework (PEFT, mergekit, custom).
+
+    **Oracle contract.** Each evaluator is a callable ``(weights) -> float``.
+    The wrapper builds the Sperner oracle by picking the index of the
+    objective with the largest gap to the per-call maximum. Make sure your
+    evaluators return finite values on the simplex boundary; otherwise the
+    Sperner boundary condition may be violated.
 
     Args:
         base_model_id: Identifier for the base model (e.g. HuggingFace repo id).
+            Stored for reference; not loaded here.
         adapter_ids: List of adapter/capability identifiers to merge.
         device: Torch device for the underlying solver.
     """
@@ -35,11 +46,19 @@ class AutoModelMerger:
     def find_optimal_mix(self,
                          evaluators: List[Callable],
                          precision: int = 50) -> Dict[str, float]:
-        """
-        The 'Set and Forget' method for model alignment.
+        """Run the Sperner walk and return the centroid mapping.
+
+        Args:
+            evaluators: Per-objective ``(weights) -> float`` callables. The
+                wrapper picks the objective with the largest gap to the
+                per-call maximum as the Sperner label.
+            precision: ``subdivision`` parameter passed to the underlying solver.
+
+        Returns:
+            ``{adapter_name: weight}`` dict summing to ~1.
         """
         logger.info(
-            f"Starting Industrial Alignment for: {self.capability_names}")
+            f"Starting AutoModelMerger walk for: {self.capability_names}")
 
         solver = NDimEquilibSolver(n_objs=len(self.adapter_ids),
                                    subdivision=precision,
@@ -77,15 +96,15 @@ class AutoModelMerger:
 
 
 def run_enterprise_demo():
-    print("\n" + "=" * 50)
-    print(" ENTERPRISE MODEL MERGING DEMO")
+    print("=" * 50)
+    print("AutoModelMerger demo (synthetic evaluators)")
     print("=" * 50)
 
     merger = AutoModelMerger(
         "meta-llama/Llama-3",
         ["adapters/speed", "adapters/accuracy", "adapters/safety"])
 
-    # Define simple business constraints
+    # Synthetic linear evaluators — purely illustrative.
     def speed_eval(w):
         return float(w[0] * 0.9)
 
@@ -97,14 +116,12 @@ def run_enterprise_demo():
 
     evaluators = [speed_eval, accuracy_eval, safety_eval]
 
-    print("[STEP 1] Calculating Nash Equilibrium for Capabilities...")
+    print("Running Sperner walk over 3 synthetic evaluators...")
     result = merger.find_optimal_mix(evaluators)
 
-    print("\n[STEP 2] Optimal Industrial Deployment Weights:")
+    print("\nPanchromatic-cell centroid:")
     for cap, weight in result.items():
-        print(f"  --> {cap:10}: {weight*100:5.1f}%")
-
-    print("\n[RESULT] This mix guarantees maximum system stability.")
+        print(f"  {cap:10}: {weight*100:5.1f}%")
     print("=" * 50)
 
 

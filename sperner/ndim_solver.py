@@ -1,23 +1,61 @@
+"""N-dimensional Sperner / Kuhn-Freudenthal walk.
+
+Finds the centroid of a panchromatic cell on the standard (n-1)-simplex,
+given an oracle that satisfies the Sperner boundary condition (on the face
+``w_i = 0``, the oracle must not return label ``i``).
+
+See ``docs/THEORY.md`` for the precise mathematical statement of what this
+solver does and does not give you. In particular, the centroid approximates
+a Brouwer fixed point of the labeling map ONLY when (a) the labeling is
+induced by a continuous map ``f : Δ → Δ`` and (b) the Sperner boundary
+condition holds. Stochastic oracles invalidate the panchromatic guarantee.
+
+References:
+    Sperner (1928); Scarf (1967); Kuhn (1968); Freudenthal (1942);
+    Papadimitriou (1994) for the PPAD-completeness lower bound.
+"""
+
 import logging
-import torch
 from typing import Callable, Generator, Optional, Tuple
+
+import torch
 
 logger = logging.getLogger(__name__)
 
 
+# Multiplier on (n_sub * (active_dim + 1)) used as the per-dimension pivot
+# budget. The total walk bound is therefore O(n_sub * d^2). Empirically, walks
+# on well-behaved labelings terminate in a small fraction of this budget; the
+# constant is generous so that adversarial labelings don't trigger a false
+# SpernerConvergenceError.
+MAX_PIVOT_STEPS_PER_CELL = 4
+
+
 class SpernerConvergenceError(Exception):
-    """Raised when the Sperner walk fails to converge."""
+    """Raised when the Sperner walk fails to find a panchromatic cell within
+    the step budget. Most commonly indicates an oracle that violates the
+    Sperner boundary condition in ways the silent override cannot fix."""
 
 
 class NDimEquilibSolver:
-    """PyTorch-native N-dimensional topological solver.
+    """PyTorch-native N-dimensional Sperner walk.
 
-    Finds the fixed point of Sperner-labeled simplicial complexes using
-    dimension-lifting on an implicit Kuhn/Freudenthal triangulation.
-    Scales to 10+ objectives with O(N) oracle calls.
+    Finds the centroid of a panchromatic cell on the standard (n-1)-simplex
+    using an implicit Kuhn-Freudenthal triangulation. Dimension-lifting walks
+    initialise on the boundary ``d=1`` face and grow outward.
+
+    **Oracle contract.** The oracle you pass to :meth:`solve` MUST satisfy
+    the Sperner boundary condition: at any weight vector ``w`` with
+    ``w_i = 0``, the oracle must not return label ``i``. Violations are
+    silently rewritten by the solver's internal ``safe_oracle``. See
+    ``docs/THEORY.md`` for the consequences.
+
+    **Complexity.** The pivot loop is bounded by ``O(n_sub * d^2)`` per walk,
+    where ``d = n_objs - 1``. This is not a polynomial-time guarantee — Sperner
+    walks are PPAD-complete (Papadimitriou 1994).
 
     Args:
-        n_objs: Number of objectives (simplex dimension + 1).
+        n_objs: Number of objectives (>= 2). The simplex dimension is ``n_objs - 1``.
         subdivision: Grid resolution; higher values give finer search. Must be >= 2.
         device: Torch device (``"cpu"`` or ``"cuda"``).
     """
@@ -47,7 +85,6 @@ class NDimEquilibSolver:
             Float tensor of shape ``(batch, n_objs)`` summing to 1 along dim -1.
         """
         y_sorted, _ = torch.sort(y, dim=-1)
-        # Prepend 0 and append n_sub to compute all diffs in one shot
         zeros = torch.zeros((y.shape[0], 1), device=self.device, dtype=y.dtype)
         nsub = torch.full((y.shape[0], 1),
                           self.n_sub,
@@ -64,19 +101,17 @@ class NDimEquilibSolver:
         """Returns the k-th vertex of the simplex defined by (y_base, sigma)."""
         v = y_base.clone()
         if k > 0:
-            # Vectorised: count how many times each axis appears in sigma[:, :k]
-            axes = sigma[:, :k]  # (batch, k)
+            axes = sigma[:, :k]
             ones = torch.ones_like(axes)
             v.scatter_add_(1, axes, ones)
         return v
 
     def pivot_batch(self, y_base: torch.Tensor, sigma: torch.Tensor,
                     k: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs a Kuhn pivot: replaces vertex k with its opposite in the adjacent simplex."""
+        """Kuhn pivot: replace vertex k with its opposite in the adjacent simplex."""
         new_y = y_base.clone()
         new_sigma = sigma.clone()
 
-        # Pivot rules for Kuhn/Freudenthal triangulation
         mask_k0 = (k == 0)
         if mask_k0.any():
             axis_0 = torch.gather(
@@ -98,14 +133,20 @@ class NDimEquilibSolver:
             new_y[mask_kd, axis_last] -= 1
             new_sigma[mask_kd] = torch.roll(sigma[mask_kd], shifts=1, dims=1)
 
+        # Middle case: swap sigma[k-1] and sigma[k] in-place via gather/scatter.
+        # Vectorised across the batch — no per-item .item() syncs.
         mask_mid = (~mask_k0) & (~mask_kd) & (k != -1)
         if mask_mid.any():
-            for i in torch.where(mask_mid)[0]:
-                ki = k[i].item()
-                # Swap sigma[ki-1] and sigma[ki]
-                tmp = new_sigma[i, ki - 1].item()
-                new_sigma[i, ki - 1] = new_sigma[i, ki]
-                new_sigma[i, ki] = tmp
+            batch_idx = torch.nonzero(mask_mid, as_tuple=False).squeeze(1)
+            k_mid = k[batch_idx]
+            km1 = (k_mid - 1).unsqueeze(1)
+            kk = k_mid.unsqueeze(1)
+            a = torch.gather(new_sigma[batch_idx], 1, km1)
+            b = torch.gather(new_sigma[batch_idx], 1, kk)
+            slice_view = new_sigma[batch_idx].clone()
+            slice_view.scatter_(1, km1, b)
+            slice_view.scatter_(1, kk, a)
+            new_sigma[batch_idx] = slice_view
 
         return new_y, new_sigma
 
@@ -125,15 +166,19 @@ class NDimEquilibSolver:
                                      dtype=torch.long)
 
         def safe_oracle(w_batch):
+            """Wrap the user's oracle, silently overriding violations of the
+            Sperner boundary condition. See docs/THEORY.md for the consequences.
+            """
             labels = oracle_fn(w_batch)
-            # Vectorised Sperner boundary enforcement
             chosen_w = w_batch[
                 torch.arange(w_batch.shape[0], device=self.device), labels]
             bad = chosen_w <= 0
             if bad.any():
-                # For invalid labels, pick the dominant nonzero component
+                # Boundary violation: substitute the index of the largest
+                # nonzero coordinate. The walk continues but the result is
+                # determined by this heuristic, not by the user's oracle.
                 masked = w_batch.clone()
-                masked[~bad] = 1.0  # don't touch valid rows
+                masked[~bad] = 1.0  # unused — only bad rows are read below
                 masked[masked <= 0] = -float('inf')
                 labels[bad] = masked[bad].argmax(dim=-1)
             return labels
@@ -160,7 +205,8 @@ class NDimEquilibSolver:
                                         dtype=torch.long)
             active_items.fill_(True)
 
-            for step in range(self.n_sub * (active_dim + 1) * 4):
+            step_budget = self.n_sub * (active_dim + 1) * MAX_PIVOT_STEPS_PER_CELL
+            for step in range(step_budget):
                 pivot_k = torch.full((batch_size, ),
                                      -1,
                                      device=self.device,
@@ -230,28 +276,57 @@ class NDimEquilibSolver:
             all_weights += self.get_barycentric_weights(v)
         return all_weights / self.n_objs
 
+    def _initial_state(self, batch_size: int,
+                       randomise: bool) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Build the starting (y_base, sigma) pair for a walk."""
+        y_base = torch.zeros((batch_size, self.d),
+                             device=self.device,
+                             dtype=torch.long)
+        if not randomise:
+            sigma = torch.tile(torch.arange(self.d, device=self.device),
+                               (batch_size, 1))
+            return y_base, sigma
+
+        sigma = torch.zeros((batch_size, self.d),
+                            device=self.device,
+                            dtype=torch.long)
+        hi = max(2, self.n_sub - 1)
+        for i in range(batch_size):
+            coords = torch.randint(1,
+                                   hi, (self.d, ),
+                                   device=self.device).sort().values
+            y_base[i] = coords
+            sigma[i] = torch.randperm(self.d, device=self.device)
+        return y_base, sigma
+
     def solve(
         self,
         oracle_fn: Callable[[torch.Tensor], torch.Tensor],
         batch_size: int = 1,
         max_restarts: int = 3,
+        random_start: bool = False,
     ) -> torch.Tensor:
-        """Run the dimension-lifting Sperner walk and return equilibrium weights.
+        """Run the dimension-lifting Sperner walk and return centroid weights.
 
         Uses multi-start to avoid boundary convergence: if a walk lands on a
-        boundary simplex, the solver retries from a randomised interior starting
-        point and returns the most interior result.
+        boundary face, the solver retries from a randomised interior starting
+        point and returns the most interior result observed.
 
         Args:
             oracle_fn: Callable receiving a ``(batch, n_objs)`` weight tensor and
-                returning a ``(batch,)`` long tensor of dissatisfied-objective indices.
+                returning a ``(batch,)`` long tensor of label indices. **Must
+                satisfy the Sperner boundary condition** — see class docstring.
             batch_size: Number of independent walks to run in parallel.
             max_restarts: Maximum number of restart attempts when the walk
-                converges to a boundary simplex (default 3).
+                converges to a boundary face (default 3).
+            random_start: If True, the first attempt also uses a randomised
+                interior starting point (rather than the canonical corner
+                ``y = 0, sigma = arange(d)``). Useful for stochastic comparison
+                of starting points.
 
         Returns:
             Tensor of shape ``(batch_size, n_objs)`` with the centroid weights of
-            the panchromatic simplex found by each walk.
+            the panchromatic cell found by each walk.
         """
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
@@ -261,27 +336,8 @@ class NDimEquilibSolver:
         interior_threshold = 1.0 / (self.n_objs * 4)
 
         for attempt in range(max(1, max_restarts)):
-            if attempt == 0:
-                y_base = torch.zeros((batch_size, self.d),
-                                     device=self.device,
-                                     dtype=torch.long)
-                sigma = torch.tile(torch.arange(self.d, device=self.device),
-                                   (batch_size, 1))
-            else:
-                # Randomised interior start
-                y_base = torch.zeros((batch_size, self.d),
-                                     device=self.device,
-                                     dtype=torch.long)
-                sigma = torch.zeros((batch_size, self.d),
-                                    device=self.device,
-                                    dtype=torch.long)
-                hi = max(2, self.n_sub - 1)
-                for i in range(batch_size):
-                    coords = torch.randint(1,
-                                           hi, (self.d, ),
-                                           device=self.device).sort().values
-                    y_base[i] = coords
-                    sigma[i] = torch.randperm(self.d, device=self.device)
+            randomise = random_start or attempt > 0
+            y_base, sigma = self._initial_state(batch_size, randomise)
 
             result = self._run_walk(oracle_fn, batch_size, y_base, sigma)
             min_w = result.min(dim=-1).values.min().item()
@@ -295,8 +351,20 @@ class NDimEquilibSolver:
 
         return best_result
 
-    def solve_generator(self) -> torch.Generator:
-        """Generator version for asynchronous/UI usage."""
+    def solve_generator(
+        self
+    ) -> Generator[Tuple[torch.Tensor, torch.Tensor, Tuple[int, int]], int,
+                   torch.Tensor]:
+        """Interactive coroutine version of the Sperner walk.
+
+        Yields ``(vertex, weights, (active_dim, total_dim))`` tuples and
+        expects a label integer to be sent via ``.send(int)``. Returns the
+        final centroid weights when the walk terminates (caught via
+        ``StopIteration.value``).
+
+        Intended for human-in-the-loop UIs where each label is provided
+        asynchronously.
+        """
         batch_size = 1
         y_base = torch.zeros((batch_size, self.d),
                              device=self.device,
@@ -316,7 +384,6 @@ class NDimEquilibSolver:
             target_labels = set(range(active_dim + 1))
             door_labels = set(range(active_dim))
 
-            # Dimension lifting initialization: label the new vertices
             for k in range(active_dim + 1):
                 vk = self.get_vertex_batch(y_base, sigma, k)
                 wk = self.get_barycentric_weights(vk)
@@ -324,7 +391,8 @@ class NDimEquilibSolver:
                 simplex_labels[:, k] = label
 
             last_pivoted_k = -1
-            for step in range(self.n_sub * (active_dim + 1) * 2):
+            step_budget = self.n_sub * (active_dim + 1) * 2
+            for step in range(step_budget):
                 cur_labels = simplex_labels[0, :active_dim + 1].tolist()
                 if set(cur_labels).issuperset(target_labels): break
 
@@ -338,7 +406,6 @@ class NDimEquilibSolver:
                         pivot_k = k
                         break
                 if pivot_k == -1:
-                    # Return centroid of current simplex
                     all_w = torch.zeros((1, self.n_objs), device=self.device)
                     for ki in range(self.n_objs):
                         vi = self.get_vertex_batch(y_base, sigma, ki)
@@ -350,7 +417,6 @@ class NDimEquilibSolver:
                                     dtype=torch.long)
                 y_new, sigma_new = self.pivot_batch(y_base, sigma, pk_t)
                 if (self.get_barycentric_weights(y_new) < 0).any():
-                    # Return centroid of current simplex
                     all_w = torch.zeros((1, self.n_objs), device=self.device)
                     for ki in range(self.n_objs):
                         vi = self.get_vertex_batch(y_base, sigma, ki)
@@ -364,7 +430,6 @@ class NDimEquilibSolver:
                 simplex_labels[0, pivot_k] = label
                 last_pivoted_k = pivot_k
 
-        # Return centroid of the panchromatic simplex
         all_weights = torch.zeros((1, self.n_objs), device=self.device)
         for k in range(self.n_objs):
             v = self.get_vertex_batch(y_base, sigma, k)

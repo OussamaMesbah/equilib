@@ -13,19 +13,36 @@ logger = logging.getLogger(__name__)
 
 
 class NDimSurrogateEquilibSolver(NDimEquilibSolver):
-    """Active-learning surrogate solver for expensive oracles.
+    """KNN active-learning wrapper over the N-dim Sperner walk.
 
-    Wraps the N-dimensional Sperner walk with a KNN surrogate model, issuing
-    real oracle queries only when needed.  Typically reduces real evaluations
-    from hundreds to ~20-50.
+    The walk is run against a **surrogate** classifier (sklearn KNN) trained
+    on a small bootstrap sample of real-oracle calls. The proposed centroid is
+    then verified against the real oracle, and the surrogate is retrained on
+    any disagreements.
+
+    Typical real-oracle call count: 20–50 (controlled by ``n_init_samples``
+    and ``max_iterations``). Compare to the underlying walk's worst-case
+    ``O(n_sub · d^2)``.
+
+    **Caveat — the Sperner guarantee is lost.** The KNN surrogate produces
+    labels that approximate the real oracle but are not generally a valid
+    Sperner labeling. The walk may therefore terminate at a cell that is not
+    panchromatic under the real oracle. The verification step in
+    :meth:`solve_with_surrogate` catches this and triggers a retrain, but the
+    convergence test is heuristic — set ``max_iterations`` generously.
+
+    **Oracle contract.** The real oracle must satisfy the Sperner boundary
+    condition (label ``i`` not returned at points where ``w_i = 0``). The
+    surrogate is allowed to violate this; the solver's ``_surrogate_oracle_label``
+    silently rewrites violations.
 
     Args:
         n_objs: Number of objectives (>= 2).
         subdivision: Grid resolution for the underlying walk.
         n_init_samples: Bootstrap samples drawn from a Dirichlet prior.
         real_oracle: Callable ``(weights: ndarray) -> int`` returning the
-            index of the most dissatisfied objective.  If *None*, a simple
-            argmin mock oracle is used.
+            index of the most underserved objective. If *None*, a simple
+            argmin mock oracle is used (useful for smoke-testing only).
         real_cost_delay: Optional sleep (seconds) simulating evaluation cost.
     """
 
@@ -66,18 +83,38 @@ class NDimSurrogateEquilibSolver(NDimEquilibSolver):
         self._train_surrogate()
 
     def _weights_to_y(self, w: np.ndarray) -> np.ndarray:
-        """Approximate weights to cumulative y (for default oracle when real_oracle not given)."""
-        w = np.asarray(w)
-        w = np.clip(w, 0, 1)
-        w = w / w.sum()
+        """Approximate barycentric weights -> sorted Kuhn lattice coordinates.
+
+        Inverse of :meth:`get_barycentric_weights` up to rounding. The Kuhn
+        coordinates produced by ``get_barycentric_weights`` are sorted (see
+        ``y_sorted, _ = torch.sort(y, ...)``), and the rest of the solver
+        assumes the same invariant. We enforce it here explicitly.
+
+        Args:
+            w: Barycentric weights of shape ``(n_objs,)``, summing to ~1.
+
+        Returns:
+            Integer array of shape ``(d,)`` with ``0 <= y[0] <= y[1] <= ... <= y[d-1] <= n_sub``.
+        """
+        w = np.asarray(w, dtype=float)
+        w = np.clip(w, 0.0, 1.0)
+        s = w.sum()
+        if s > 0:
+            w = w / s
+        # Cumulative-sum mapping (matches get_barycentric_weights up to the
+        # reverse flip): y[i] = round(n_sub * sum(w[d:i+1:-1])).
+        # We then enforce the sorted invariant.
         y = np.zeros(self.d, dtype=int)
         cum = 0.0
         for i in range(self.d):
             cum += w[i]
             y[i] = int(round(cum * self.n_sub))
         y = np.clip(y, 0, self.n_sub)
-        if y[-1] > self.n_sub:
-            y[-1] = self.n_sub
+        # Enforce monotone non-decreasing — the round() above can break order
+        # on weight vectors with near-zero coords.
+        for i in range(1, self.d):
+            if y[i] < y[i - 1]:
+                y[i] = y[i - 1]
         return y
 
     def _bootstrap(self):
@@ -193,7 +230,9 @@ class SurrogateEquilibSolver(EquilibSolver):
     """Legacy 2D (3-objective) surrogate solver with active learning.
 
     Prefer :class:`NDimSurrogateEquilibSolver` for new code; this class is
-    retained for backward compatibility with 3-objective workflows.
+    retained for backward compatibility with 3-objective workflows. Same
+    caveats apply: the surrogate labeling is not guaranteed to be a valid
+    Sperner labeling.
     """
 
     def __init__(self,

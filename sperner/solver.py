@@ -1,4 +1,13 @@
-"""Legacy 2D (3-objective) Sperner walk solver."""
+"""Legacy explicit 2D (3-objective) Sperner walk.
+
+Kept for readability and as the base class for the iterative-zoom adaptive
+solver. For 3+ objectives, prefer :class:`~sperner.ndim_solver.NDimEquilibSolver`.
+
+The built-in :meth:`oracle_label` is a *demo* oracle that solves a synthetic
+problem: it labels each grid point by ``argmax((w - target)^2)``. Pass a
+custom ``targets`` to point the demo elsewhere, or subclass and override
+:meth:`oracle_label` for your own problem.
+"""
 
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -9,19 +18,29 @@ logger = logging.getLogger(__name__)
 
 
 class EquilibSolver:
-    """2D simplex solver for 3-objective alignment problems.
-
-    Implements the classical Sperner walk on a triangulated 2-simplex.
-    For more than 3 objectives, use :class:`~equilib.ndim_solver.NDimEquilibSolver`.
+    """Explicit 2D Sperner walk on a triangulated 2-simplex.
 
     Args:
         subdivision: Grid resolution (number of subdivisions per edge).
+        targets: Optional target weight vector of shape ``(3,)`` used by the
+            built-in synthetic :meth:`oracle_label`. Defaults to the
+            barycentre ``[1/3, 1/3, 1/3]``. Ignored when subclassing and
+            overriding :meth:`oracle_label`.
     """
 
-    def __init__(self, subdivision: int = 10) -> None:
+    def __init__(self,
+                 subdivision: int = 10,
+                 targets: Optional[np.ndarray] = None) -> None:
         self.n = subdivision
         self.vertices: Dict[Tuple[int, int], int] = {}
-        self.targets = np.array([0.33, 0.33, 0.34])
+        if targets is None:
+            self.targets = np.array([1.0 / 3, 1.0 / 3, 1.0 / 3])
+        else:
+            targets_arr = np.asarray(targets, dtype=float)
+            if targets_arr.shape != (3, ):
+                raise ValueError(
+                    f"targets must have shape (3,), got {targets_arr.shape}")
+            self.targets = targets_arr
 
     def weights_from_coords(self, x, y):
         """
@@ -37,25 +56,22 @@ class EquilibSolver:
         return np.array([w1, w2, w3])
 
     def oracle_label(self, x, y):
-        """
-        The 'Oracle' as defined in the algorithm description.
-        Returns the index of the objective with the MAXIMUM loss (The unhappy agent).
-        This creates regions where we label the point by who wants to 'move' / 'improve'.
-        Sperner Condition: On edge w_i = 0, Label != i.
-        So we force Loss_i = -1.0 if w_i = 0, so it's never the Max.
+        """Built-in demo oracle: ``argmax((w - target)^2)`` with Sperner boundary.
+
+        Returns the index of the objective whose current weight deviates most
+        from ``self.targets``. The Sperner boundary condition is enforced by
+        setting ``loss_i = -1`` whenever ``w_i = 0`` so label ``i`` cannot win.
+
+        Subclass and override this method for your own problem.
         """
         if (x, y) in self.vertices:
             return self.vertices[(x, y)]
 
         weights = self.weights_from_coords(x, y)
 
-        # --- SIMULATED LOSS FUNCTION ---
-        # Loss = (weight - target)^2
         losses = (weights - self.targets)**2
 
-        # Enforce Sperner Boundary Conditions
-        # We want to forbid Label i if w[i] == 0.
-        # Since we are picking ARGMAX, we set strict boundary losses to -1 (impossible to be max).
+        # Sperner boundary: on the face w_i = 0, label i must not be returned.
         if weights[0] == 0: losses[0] = -1.0
         if weights[1] == 0: losses[1] = -1.0
         if weights[2] == 0: losses[2] = -1.0
@@ -114,6 +130,8 @@ class EquilibSolver:
         entered_from_edge_set = {v1, v2}
 
         step = 0
+        # Walk budget: O(n^2). The 2D triangulation has 2n^2 cells in the worst
+        # case, so this lets the walk visit every cell once.
         max_steps = self.n * self.n * 2
 
         while step < max_steps:

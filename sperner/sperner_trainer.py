@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Callable, Dict, Generator, List, Optional
 
 import numpy as np
@@ -59,15 +60,31 @@ class BaseObjective:
 
 
 class SpernerTrainer:
-    """Hugging Face / PEFT adapter for topological alignment.
+    """Experimental Transformers/PEFT integration for LoRA adapter mixing.
 
-    Wraps an :class:`NDimEquilibSolver` to optimise LoRA adapter mixing
-    weights by evaluating a set of conflicting objectives.
+    Wraps an :class:`NDimEquilibSolver` to find a centroid on the simplex of
+    adapter mixing weights, given user-supplied objective functions that
+    score the blended model.
+
+    **Real-model cost.** In ``mock=False`` mode, every pivot triggers a full
+    blend + evaluation pass. For 3 adapters on a 30-cell grid you can expect
+    *hundreds* of model evaluations per walk — typically slower than a coarse
+    direct sweep and a tiny fraction of what RLHF or DPO does in the same
+    time. A :class:`UserWarning` is emitted on first instantiation in
+    ``mock=False`` mode.
+
+    **Oracle contract.** The trainer constructs its oracle internally by
+    calling :meth:`oracle_label`, which is the argmax of the objectives. As
+    long as your objectives are bounded above on the boundary (no objective
+    blows up when its adapter weight is zero), the Sperner boundary condition
+    holds approximately. See ``docs/THEORY.md`` for details.
 
     Args:
         base_model: A Hugging Face model object or identifier string.
+            Ignored in mock mode.
         adapters: List of adapter names to blend.
-        objectives: List of callables returning scalar losses.
+        objectives: List of callables ``(model) -> float`` returning scalar
+            losses. Required in non-mock mode.
         mock: If *True* (default), uses a synthetic loss landscape instead
             of running real model inference.
     """
@@ -82,6 +99,19 @@ class SpernerTrainer:
         self.objectives = objectives
         self.n_objs = len(adapters)
         self.mock = mock
+
+        if not mock:
+            warnings.warn(
+                "SpernerTrainer in non-mock mode performs a full adapter blend "
+                "and objective evaluation per pivot. Expect hundreds of model "
+                "evaluations per walk. For most LoRA-merging workflows, a "
+                "coarse direct sweep or task-arithmetic merging will be faster.",
+                UserWarning,
+                stacklevel=2,
+            )
+            if not objectives:
+                raise ValueError(
+                    "Non-mock SpernerTrainer requires at least one objective callable.")
 
         # Caching to avoid redundant LLM calls for the same weight mix
         self._eval_cache: Dict[tuple, List[float]] = {}

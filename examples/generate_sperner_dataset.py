@@ -1,11 +1,19 @@
+"""Generate a synthetic Sperner-coloring dataset on the 2-simplex.
+
+Each sample is a triangulated 2-simplex with vertices coloured by a valid
+Sperner labeling: the three corners take the three distinct labels, each
+edge restricts to the two labels of its endpoints, and interior vertices
+are coloured uniformly at random.
+
+The script then brute-forces the panchromatic triangle. This is used as a
+ground-truth dataset for training/evaluating ML models that learn to find
+panchromatic cells.
+"""
+
 import sys
 import random
 import json
 import os
-
-# Generates a Sperner-Bench sample based on Thesis Section 1.1 & 1.2
-# Grid is represented as a list of triangles.
-# Colors: 0, 1, 2 correspond to the thesis colors (e.g., Blue, Yellow, Red).
 
 def get_barycentric_grid(n):
     # Create a simple coordinate grid for an equilateral triangle
@@ -69,7 +77,7 @@ def color_grid(vertices, n):
             elif boundary_type == 2: c = random.choice([0, 2])
             else: c = random.choice([1, 2])
         else:
-            # Internal node: Any color allowed (Thesis Section 1.1)
+            # Interior vertex: any of the three labels is allowed.
             c = random.randint(0, 2)
         colors.append(c)
     return colors

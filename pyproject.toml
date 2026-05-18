@@ -1,14 +1,14 @@
 [project]
 name = "sperner"
 version = "0.1.0"
-description = "Gradient-free multi-objective alignment via Sperner's Lemma and implicit Freudenthal triangulation."
+description = "PyTorch implementation of Sperner / Kuhn-Freudenthal walks for finding panchromatic-cell centroids on labeled simplices."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Oussama Mesbah", email = "omesbah@users.noreply.github.com"}
+    {name = "Oussama Mesbah", email = "27909183+OussamaMesbah@users.noreply.github.com"}
 ]
-keywords = ["pytorch", "alignment", "multi-objective", "sperner", "llm", "topological", "nash-equilibrium"]
+keywords = ["pytorch", "multi-objective", "sperner", "scarf", "kuhn-freudenthal", "fixed-point", "simplex"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",

@@ -1,8 +1,11 @@
-"""Example: Topological MoE routing for expert allocation.
+"""Demo: per-token MoE routing via a Sperner walk.
 
-Demonstrates how TopologicalMoERouter finds the Nash equilibrium of expert
-contributions for a given hidden state, replacing unstable softmax gating.
+This is a research demo, not a production routing layer. Per-token Sperner
+walks are many orders of magnitude slower than softmax gating; the demo is
+kept to show what the resulting routing weights look like.
 """
+
+import warnings
 
 import torch
 from sperner import TopologicalMoERouter
@@ -12,16 +15,20 @@ def main():
     num_experts = 6
     latent_dim = 128  # small for demo speed
 
-    router = TopologicalMoERouter(
-        num_experts=num_experts,
-        latent_dim=latent_dim,
-        device="cpu",
-    )
+    with warnings.catch_warnings():
+        # The router emits a UserWarning on construction — suppress here
+        # because we are deliberately running the demo.
+        warnings.simplefilter("ignore", UserWarning)
+        router = TopologicalMoERouter(
+            num_experts=num_experts,
+            latent_dim=latent_dim,
+            device="cpu",
+        )
 
-    # Simulate a hidden state from a transformer layer
     hidden = torch.randn(1, 1, latent_dim)
 
-    print(f"Routing {num_experts} experts via topological equilibrium...")
+    print(f"Running Sperner walk for {num_experts} experts "
+          f"(slow on purpose)...")
     weights = router.forward_route(hidden, precision=20)
 
     print(f"\nExpert weights (sum={weights.sum():.3f}):")
@@ -29,7 +36,9 @@ def main():
         bar = "#" * int(w * 40)
         print(f"  Expert {i}: {w:.3f}  {bar}")
 
-    print("\nNo routing collapse — all experts get non-trivial allocation.")
+    print("\nAll experts received a positive allocation — that's a property "
+          "of the panchromatic-cell centroid, not a guarantee of routing "
+          "quality. See the module docstring for caveats.")
 
 
 if __name__ == "__main__":
