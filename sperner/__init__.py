@@ -8,7 +8,7 @@ the README for the oracle contract.
 References: Sperner (1928); Scarf (1967); Kuhn (1968); Freudenthal (1942).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from typing import Callable, Optional, Union
 

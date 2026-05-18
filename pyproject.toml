@@ -1,6 +1,6 @@
 [project]
 name = "sperner"
-version = "0.1.0"
+version = "0.2.0"
 description = "PyTorch implementation of Sperner / Kuhn-Freudenthal walks for finding panchromatic-cell centroids on labeled simplices."
 readme = "README.md"
 requires-python = ">=3.10"
